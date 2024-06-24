@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"strconv"
+)
 
 func helloWorld() {
 	fmt.Println("Hello World!")
@@ -354,7 +358,48 @@ func pointers() {
 	fmt.Println(otherSlice)
 }
 
+func divide(value, divident float64) (float64, error) {
+	if divident == 0 {
+		return 0, errors.New("division by zero")
+	}
+	return value / divident, nil
+}
+
+func handlingErrors() {
+	result, err := divide(100.0, 2.0)
+	if (err != nil) {
+		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Printf("Result: %v\n", result)
+	}
+}
+
 func main() {
-	
+	/*
+	reader := bufio.NewReader(os.Stdin)
+	text, readErr := reader.ReadString('\n')
+	if readErr == nil {
+		text = strings.TrimSuffix(text, "\n")
+		text = strings.TrimSuffix(text, "\r")
+		fmt.Println(text)
+	}
+	*/
+
+	/*
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	text := scanner.Text()
+	if err := scanner.Err(); err == nil {
+		fmt.Println(text)
+	}
+	*/
+
+	value := 3.1415
+	formattedValue := fmt.Sprintf("%.2f", value)
+	fmt.Println(formattedValue);
+
+	parsedValue, _ := strconv.ParseFloat(formattedValue, 64)
+	fmt.Println(parsedValue);
+
 }
 
