@@ -309,7 +309,7 @@ func doubleWithPointer(valuePointer *int) int {
 	return *valuePointer * 2
 }
 
-func main() {
+func pointers() {
 	value := 10
 	otherValue := value; // kopia wartości, otherValue jest równe 10
 	value = 0
@@ -352,5 +352,9 @@ func main() {
 	otherSlice[0] = 0
 	fmt.Println(slice)
 	fmt.Println(otherSlice)
+}
+
+func main() {
+	
 }
 
