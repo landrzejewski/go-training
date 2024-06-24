@@ -370,11 +370,96 @@ func pointers() {
 	fmt.Println(otherSlice)
 }
 
+func sumAll(values ...int) (sum int) {  // zmienna ilośc argumentów wejściowych, nazwany rezultat 
+	for _, value := range values {
+		sum += value
+	}
+	return // zwaracamy wszystkie nazwane zmienne 
+}
+
+func idGenerator() func() int {
+	lastId := 0
+	return func() int {
+		lastId++
+		return lastId
+	}
+} 
+
+func forEach(numbers []int, task func (int, int)) {
+	for idx, number := range numbers {
+		task(number, idx)
+	}	
+}
+
+func show(value int, index int) {
+	fmt.Printf("Value: %v\n", value)
+}
+
+func factorial(n int) int { // rekurencja
+	if n == 0 {
+		return 1
+	}
+	return n * factorial(n - 1)
+}
+
+func functions() {
+	sum := sumAll(1, 2, 3, 4)
+	fmt.Println(sum)
+	values := []int{1, 2, 3 ,4}
+	sum = sumAll(values...)
+	fmt.Println(sum)
+
+	generator := idGenerator()
+	fmt.Println(generator())
+	fmt.Println(generator())
+
+	forEach([]int{1, 2, 3, 4}, func(value, _ int) {
+		fmt.Println(value)
+	})
+
+	forEach([]int{1, 2, 3, 4}, show)
+
+	fmt.Println(factorial(10))
+}
+
 func divide(value, divident float64) (float64, error) {
 	if divident == 0 {
 		return 0, errors.New("division by zero")
 	}
 	return value / divident, nil
+}
+
+var ErrFileNotFound = fmt.Errorf("file not found")
+var ErrRead = fmt.Errorf("file read failed")
+
+func readData(path string) error {
+	if path == "" {
+		return ErrFileNotFound
+	}
+	// read
+	// return fmt.Errorf("IO error", ErrRead)
+	return nil
+}
+
+// Niestandardowa struktura reprezentująca błąd/sytuację wyjątkową
+
+type customError struct {
+	code int
+	description string
+}
+
+func (e *customError) Error() string {
+	return fmt.Sprintf("%d: %s", e.code, e.description)
+}
+
+func calculate(value int) (int, error) {
+	if value <= 0 {
+		return -1, &customError{
+			code: 1,
+			description: "Value is too small",
+		}
+	}
+	return value * 2, nil
 }
 
 func handlingErrors() {
@@ -383,6 +468,22 @@ func handlingErrors() {
 		fmt.Printf("Error: %v\n", err)
 	} else {
 		fmt.Printf("Result: %v\n", result)
+	}
+
+	if error := readData("path"); error != nil {
+		if errors.Is(error, ErrFileNotFound) {
+			fmt.Println("File not found");
+		} else if errors.Is(error, ErrRead) {
+			fmt.Println("Read failed");
+		}	
+	} else {
+		fmt.Println("Done")
+	}
+
+	_, resultError := calculate(0)
+	var errPointer *customError
+	if errors.As(resultError, &errPointer) {
+		fmt.Println(errPointer.code, errPointer.description);	
 	}
 }
 
@@ -417,4 +518,3 @@ func readingAndParsingStandardInput() {
 func main() {
 
 }
-
