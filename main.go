@@ -374,7 +374,7 @@ func handlingErrors() {
 	}
 }
 
-func main() {
+func readingAndParsingStandardInput() {
 	/*
 	reader := bufio.NewReader(os.Stdin)
 	text, readErr := reader.ReadString('\n')
@@ -400,6 +400,9 @@ func main() {
 
 	parsedValue, _ := strconv.ParseFloat(formattedValue, 64)
 	fmt.Println(parsedValue);
+}
 
+func main() {
+	
 }
 
