@@ -266,6 +266,18 @@ func collections() {
 	// copy(destSlice, srcSlice)
 	// porównywanie slices
 	// slices.Equal(slice1, slice2)
+	// sortowanie
+	// slices.Sort(slice)
+	// sortowanie z użyciem funkcji
+	/*
+	fruits := []string{"peach", "banana", "kiwi"}
+
+    lenCmp := func(a, b string) int {
+        return cmp.Compare(len(a), len(b))
+    }
+    slices.SortFunc(fruits, lenCmp)
+    fmt.Println(fruits)
+	*/
 
 	customSlice := otherMessagesSlice[2:5]
 	fmt.Println(customSlice)
@@ -403,6 +415,6 @@ func readingAndParsingStandardInput() {
 }
 
 func main() {
-	
+
 }
 
