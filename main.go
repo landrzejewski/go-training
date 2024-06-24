@@ -485,6 +485,8 @@ func handlingErrors() {
 	if errors.As(resultError, &errPointer) {
 		fmt.Println(errPointer.code, errPointer.description);	
 	}
+
+	// panic(err) // błąd krytyczny, przerwanie działania aplikacji
 }
 
 func readingAndParsingStandardInput() {
