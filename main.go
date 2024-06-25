@@ -558,6 +558,6 @@ func main() {
 }
 
 
-// Struktura, która opisuje wartosci walutowe (zawiera kwotę i walutę)
-// Struktura powinna umożliwiać dodawanie i odejmowanie innych wartości walutowych (zaimplementuj add, subtract)
+// Struktura monetaryAmount, która opisuje wartosci walutowe (zawiera kwotę i walutę)
+// Struktura powinna umożliwiać dodawanie i odejmowanie innych wartości walutowych (zaimplementuj add, subtract), jeżeli waluta jest inna to zwracamy err
 // Dodaj funkcję konstruktora
