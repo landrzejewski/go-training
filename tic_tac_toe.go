@@ -61,7 +61,7 @@ func makeMove(player string, row int, col int) bool {
 	return true
 }
 
-func run() {
+func ticTacToe() {
 	currentPlayer := PLAYER_X
 	var row, col int
 	for {
