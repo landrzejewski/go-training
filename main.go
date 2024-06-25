@@ -9,6 +9,7 @@ import (
 	// u "training.pl/examples/utils"
 	. "training.pl/examples/utils"
 	// _ "encoding/json" // _ oznacza, że nieużwany import nie powinien skutkować błędu
+	"training.pl/examples/budget"
 )
 
 func helloWorld() {
@@ -743,6 +744,9 @@ Aplikacja powinna zapisywać dane wprowadzone przez użytkownika w pliku tekstow
 */
 
 func main() {
-	
+	homeBudget := budget.HomeBudget{}
+	homeBudget.AddEntry(budget.NewEntry(200.0, budget.DepositOperation, "Salary"))
+	homeBudget.AddEntry(budget.NewEntry(50.0, budget.WithdrawOperation, "Cinema"))
+	homeBudget.PrintSummary()
 }
 
