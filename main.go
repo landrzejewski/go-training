@@ -517,6 +517,47 @@ func readingAndParsingStandardInput() {
 	fmt.Println(parsedValue);
 }
 
-func main() {
-
+type person struct {
+	firstName string
+	lastName string
+	age int
 }
+
+// w przypadku kiedy nie chcemy, aby wywołanie metody spowodowało utworzenie kopii struktoru należy użyć wskaźnika/*
+func (p *person) description() string {
+	return fmt.Sprintf("{name: %v %v, age: %d}", p.firstName, p.lastName, p.age)
+}
+
+func (p *person) setAge(age int) { 
+	p.age = age
+}
+
+func newPerson(firstName, lastName string, age int) *person {
+	return &person{firstName: firstName, lastName: lastName, age: age}
+}
+
+func main() {
+	fmt.Println(person{"Jan", "Kowalski", 32}) // można nie podawać kluczy/nazw pól, ale wtedy ważna jest kolejność
+	user := person{firstName: "Marek", lastName: "Nowak"} // nipodanie wartości skutkuje ustawieniem pola na wartość domyślną
+	// otherUser := user // utworzeni kopii
+	fmt.Println(&user)
+	fmt.Println(newPerson("Jan", "Kowalski", 32))
+	user.lastName = "Test"
+	fmt.Println(user.lastName)
+	user.setAge(20)
+	fmt.Println(user.description())
+
+	account := struct {
+		number string
+		balance float64
+	} {
+		"00000000001",
+		0.0,
+	}
+	fmt.Println(&account)
+}
+
+
+// Struktura, która opisuje wartosci walutowe (zawiera kwotę i walutę)
+// Struktura powinna umożliwiać dodawanie i odejmowanie innych wartości walutowych (zaimplementuj add, subtract)
+// Dodaj funkcję konstruktora
