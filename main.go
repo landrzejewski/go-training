@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -814,18 +815,122 @@ func echo() {
 	}
 }
 
-func main() {
-	nuberLines := flag.Bool("n", false, "Number the output lines")
-	nuberNonEmptyLines := flag.Bool("nb", false, "Number the output lines, but not empty")
+type printer interface {
+	print(*int, string)
+}
+
+type defaultPrinter struct {
+}
+
+func (p *defaultPrinter) print(lineNumber *int, line string)  {
+	fmt.Println(line)
+}
+
+type numberingPrinter struct {
+}
+
+func (p *numberingPrinter) print(lineNumber *int, line string)  {
+	fmt.Printf("%6d  %s\n", *lineNumber, line)
+	*lineNumber++
+}
+
+type numberingWithoutEmptyLinesPrinter struct {
+}
+
+func (p *numberingWithoutEmptyLinesPrinter) print(lineNumber *int, line string)  {
+	if line != "" {
+		fmt.Printf("%6d  %s\n", *lineNumber, line)
+		*lineNumber++
+	} else {
+		fmt.Println(line)
+	}
+}
+
+func createPrint(numberLines, numberNonEmptyLines bool) printer {
+	if numberLines {
+		return &numberingPrinter{}
+	} else if numberNonEmptyLines {
+		return &numberingWithoutEmptyLinesPrinter{}
+	} 
+	return &defaultPrinter{}
+}
+
+
+// type printer func(*int, string)
+
+// func createPrintFn(numberLines, numberNonEmptyLines bool) printer {
+// 	var printFn printer
+
+// 	if numberLines {
+// 		printFn = func( lineNumber *int, line string) {
+// 			fmt.Printf("%6d  %s\n", *lineNumber, line)
+// 			*lineNumber++
+// 		}
+// 	} else if numberNonEmptyLines {
+// 		printFn = func( lineNumber *int, line string) {
+// 			if line != "" {
+// 				fmt.Printf("%6d  %s\n", *lineNumber, line)
+// 				*lineNumber++
+// 			} else {
+// 				fmt.Println(line)
+// 			}
+// 		}
+// 	} else {
+// 		printFn = func(_ *int, line string) {
+// 			fmt.Println(line)
+// 		}
+// 	}
+// 	return printFn
+// }
+
+func catFile(filename string, numberLines, numberNonEmptyLines bool) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	lineNumber := 1
+
+	// printFn := createPrintFn(numberLines, numberNonEmptyLines)
+	printer := createPrint(numberLines, numberNonEmptyLines)
+
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		printer.print(&lineNumber, line)
+		// printFn(&lineNumber, line)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func cat() {
+	numberLines := flag.Bool("n", false, "Number the output lines")
+	numberNonEmptyLines := flag.Bool("nb", false, "Number the output lines, but not empty lines")
 	flag.Parse()
+
 	files := flag.Args()
 
-	if len(files) == 0 {
-		fmt.Println("Usage: cat [-n|-nb] [file ...]")
+	if len(files) == 0 || (*numberLines && *numberNonEmptyLines) {
+		fmt.Fprintln(os.Stderr, "Usage: cat [-n|-nb] [file ...]")
 		os.Exit(1)
 	}
 
-	fmt.Println(*nuberLines)
-	fmt.Println(*nuberNonEmptyLines)
-	fmt.Println(files)
+	for _, file := range files {
+		fmt.Printf("File: %s\n", file)
+		err := catFile(file, *numberLines, *numberNonEmptyLines)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading file %s: %v\n", file, err)
+		}
+	}
+}
+
+func main() {
+
 }
