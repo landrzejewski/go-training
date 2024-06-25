@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -602,8 +603,125 @@ func structs() {
 
 // custom types / type aliases
 
-func main() {
+type text string
 
+func (self *text) print() {
+	fmt.Println(*self)
+}
+
+func typeAliases() {
+	var helloText text = "Hello"
+	helloText.print()
+}
+
+// interfaces
+
+type rectangle struct {
+	width, height float64
+}
+
+type cirlce struct {
+	radius float64
+}
+
+type display interface {
+	getInfo() string
+}
+
+type shape interface {
+	area() float64
+	// getInfo() string
+	// display
+}
+
+func (r *rectangle) area() float64 {
+	return r.height * r.width
+}
+
+func(c *cirlce) area() float64 {
+	return math.Pi * c.radius * c.radius
+}
+
+func printArea(shape shape) {
+	fmt.Printf("Area of %T is equal %.2f\n", shape, shape.area())
+}
+
+func interfaces() {
+	printArea(&rectangle{10, 20})
+	printArea(&cirlce{100})
+}
+
+// Struct embedding
+
+type address struct {
+	street string
+	houseNumber int
+}
+
+func (a *address) description() string {
+	return fmt.Sprintf("%v %d", a.street, a.houseNumber)
+}
+
+type user struct {
+	name string
+	address
+}
+
+// func (u *user) description() string {
+// 	return fmt.Sprintf("%v", u.name)
+// }
+
+func structEmbedding() {
+	myUser := user{
+		name: "Jan Kowalski",
+		address: address{
+			street: "Dobra",
+			houseNumber: 38 ,
+		},
+	}
+	fmt.Println(myUser)
+	fmt.Println(myUser.address.description())
+	fmt.Println(myUser.description())
+}
+
+// enums
+
+type responseStatus int
+
+const (
+	ok = iota
+	noContent
+	notFound
+)
+
+var statusName = map[responseStatus]string{
+	ok: "Ok",
+	noContent: "No content",
+	notFound: "Not found",
+}
+
+func task() responseStatus {
+	// logika
+	return ok
+}
+
+type response struct {
+	body string
+	status responseStatus
+}
+
+func enums() {
+	status := notFound
+
+	switch status {
+	case ok, noContent:
+		fmt.Println("Success")
+	case notFound:
+		fmt.Printf("Failure: %v", statusName[responseStatus(status)])
+	}
+}
+
+func main() {
 
 }
 
