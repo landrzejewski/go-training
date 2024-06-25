@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
+
 	// "training.pl/examples/utils"
 	// u "training.pl/examples/utils"
 	. "training.pl/examples/utils"
@@ -743,10 +746,60 @@ oraz generować raport/tabelę w terminalu. Raport powinien zawierać wszystkie 
 Aplikacja powinna zapisywać dane wprowadzone przez użytkownika w pliku tekstowym (json).
 */
 
+const BUDGET_FILE string = "budget.json"
+
+func load() (homeBudget *budget.HomeBudget) {
+	homeBudget = &budget.HomeBudget{}
+	bytesRead, _ := os.ReadFile(BUDGET_FILE)
+	json.Unmarshal(bytesRead, &homeBudget)
+	return
+}
+
+func save(homeBudget *budget.HomeBudget) {
+	bytes, _ := json.MarshalIndent(homeBudget, "", "  ")
+	os.WriteFile(BUDGET_FILE, bytes, 0644)
+}
+
+func entryFromArgs(args []string) (*budget.Entry, error) {
+	amount, err := strconv.ParseFloat(args[0], 64)
+	if err != nil || amount == 0 {
+		return nil, errors.New("invalid amount")
+	}
+	operationType := budget.DepositOperation
+	if amount < 0 {
+		amount = math.Abs(amount)
+		operationType = budget.WithdrawOperation
+	}
+	description := args[1]
+	return budget.NewEntry(amount, budget.OperationType(operationType), description), nil
+}
+
+func processArgs(homeBudget *budget.HomeBudget) {
+	args := os.Args[1:]
+	if (len(args) >= 2) {
+		entry, err := entryFromArgs(args)
+		if err == nil {
+			homeBudget.AddEntry(entry)
+			save(homeBudget)
+		}
+	}
+
+}
+
 func main() {
-	homeBudget := budget.HomeBudget{}
-	homeBudget.AddEntry(budget.NewEntry(200.0, budget.DepositOperation, "Salary"))
-	homeBudget.AddEntry(budget.NewEntry(50.0, budget.WithdrawOperation, "Cinema"))
+	homeBudget := load()
+	processArgs(homeBudget)
 	homeBudget.PrintSummary()
 }
+
+/*
+Zaimplementuj następujące polecenia systemowe w go:
+
+echo - drukuje tekst podany jako argument na standardowym wyjściu
+cat  - drukuje zawartość wskazanych plików na standardowym wyjściu, 
+       zezwala na opcjonalne numerowanie wierszy (przełącznik -n),
+	   numerowanie wierszy można wyłączyć dla pustych wierszy (przełącznik -nb)
+find - przeszukuje i drukuje ścieżki plików i/lub katalogów, których nazwy pasują do wskazanego wzorca
+grep - wyszukuje i drukuje wiersze zawierające wskazany tekst/wzorzec ze wskazanych plików/ścieżek
+*/
 

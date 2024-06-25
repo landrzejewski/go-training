@@ -3,16 +3,16 @@ package budget
 import "fmt"
 
 type HomeBudget struct {
-	entries []Entry
+	Entries []Entry `json:"entries"`
 }
 
 func (b *HomeBudget) AddEntry(entry *Entry) {
-	b.entries = append(b.entries, *entry)
+	b.Entries = append(b.Entries, *entry)
 }
 
 func (b *HomeBudget) PrintSummary() {
 	totalBalance := 0.0
-	for _, entry := range b.entries {
+	for _, entry := range b.Entries {
 		if entry.OperationType == DepositOperation {
 			totalBalance += entry.Amount
 		} else {
@@ -20,6 +20,6 @@ func (b *HomeBudget) PrintSummary() {
 		}
 		entry.PrintSummary()
 	}
-	fmt.Println("------------------------------------------------------------------------")
+	fmt.Println("-----------------------------------------------")
 	fmt.Printf("Total balance: %.2f\n", totalBalance)
 }
