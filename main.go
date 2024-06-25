@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"math"
 	"os"
@@ -814,5 +815,17 @@ func echo() {
 }
 
 func main() {
-	echo()
+	nuberLines := flag.Bool("n", false, "Number the output lines")
+	nuberNonEmptyLines := flag.Bool("nb", false, "Number the output lines, but not empty")
+	flag.Parse()
+	files := flag.Args()
+
+	if len(files) == 0 {
+		fmt.Println("Usage: cat [-n|-nb] [file ...]")
+		os.Exit(1)
+	}
+
+	fmt.Println(*nuberLines)
+	fmt.Println(*nuberNonEmptyLines)
+	fmt.Println(files)
 }
