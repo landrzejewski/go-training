@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	// "training.pl/examples/utils"
+	// u "training.pl/examples/utils"
+	. "training.pl/examples/utils"
+	// _ "encoding/json" // _ oznacza, że nieużwany import nie powinien skutkować błędu
 )
 
 func helloWorld() {
@@ -721,7 +725,24 @@ func enums() {
 	}
 }
 
-func main() {
+func packages() {
+	// jeśli coś jest w jednym pakiecie (nawet jeśli jest to zdefiniowane różnych plikach) to jest dostępne widoczne
+	// fmt.Println(utils.Add(1, 2))
+	// fmt.Println(u.Add(1, 2))
+	fmt.Println(Add(1, 2))
 
+	// api examples
+	// https://gobyexample.com
+}
+
+/*
+Napisz aplikację do rejestrowania wpływów/wydatków na potrzeby budżetu domowego. 
+Aplikacja powinna rejestrować kwotę, rodzaj operacji, timestamp i jej opis (podane jako argumenty wiersza poleceń) 
+oraz generować raport/tabelę w terminalu. Raport powinien zawierać wszystkie operacje i podsumowanie/saldo końcowe. 
+Aplikacja powinna zapisywać dane wprowadzone przez użytkownika w pliku tekstowym (json).
+*/
+
+func main() {
+	
 }
 
