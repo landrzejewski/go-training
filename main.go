@@ -533,10 +533,47 @@ func (p *person) setAge(age int) {
 }
 
 func newPerson(firstName, lastName string, age int) *person {
-	return &person{firstName: firstName, lastName: lastName, age: age}
+	return &person{firstName, lastName, age}
 }
 
-func main() {
+// Struktura monetaryAmount, która opisuje wartosci walutowe (zawiera kwotę i walutę)
+// Struktura powinna umożliwiać dodawanie i odejmowanie innych wartości walutowych (zaimplementuj metody add, subtract), jeżeli waluta jest inna to zwracamy err
+// Dodaj funkcję konstruktora
+
+type monetaryAmount struct {
+	value float64
+	currency string
+}
+
+func newMonetaryAmount(value float64, currency string) *monetaryAmount {
+	return &monetaryAmount{value, currency}
+}
+
+func (self *monetaryAmount) add(monetaryAmount *monetaryAmount) error {
+	if self.currency != monetaryAmount.currency {
+		return errors.New("incompatible currency")
+	}
+	self.value += monetaryAmount.value
+	return nil
+}
+
+func (self *monetaryAmount) subtract(monetaryAmount *monetaryAmount) error {
+	if self.currency != monetaryAmount.currency {
+		return errors.New("incompatible currency")
+	}
+	self.value -= monetaryAmount.value
+	return nil
+}
+
+func (self monetaryAmount) addImmutable(amount *monetaryAmount) (*monetaryAmount, error) {
+	if self.currency != amount.currency {
+		return nil, errors.New("incompatible currency")
+	}
+	self.value += amount.value
+	return &self, nil
+}
+
+func structs() {
 	fmt.Println(person{"Jan", "Kowalski", 32}) // można nie podawać kluczy/nazw pól, ale wtedy ważna jest kolejność
 	user := person{firstName: "Marek", lastName: "Nowak"} // nipodanie wartości skutkuje ustawieniem pola na wartość domyślną
 	// otherUser := user // utworzeni kopii
@@ -555,9 +592,18 @@ func main() {
 		0.0,
 	}
 	fmt.Println(&account)
+
+	amount := newMonetaryAmount(100.0, "PLN")
+	otherAmount := newMonetaryAmount(100.0, "PLN")
+	amount.add(otherAmount)
+	fmt.Println(amount)
+	fmt.Println(amount.addImmutable(otherAmount))
 }
 
+// custom types / type aliases
 
-// Struktura monetaryAmount, która opisuje wartosci walutowe (zawiera kwotę i walutę)
-// Struktura powinna umożliwiać dodawanie i odejmowanie innych wartości walutowych (zaimplementuj add, subtract), jeżeli waluta jest inna to zwracamy err
-// Dodaj funkcję konstruktora
+func main() {
+
+
+}
+
