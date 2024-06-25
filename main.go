@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 
 	// "training.pl/examples/utils"
 	// u "training.pl/examples/utils"
@@ -786,7 +787,7 @@ func processArgs(homeBudget *budget.HomeBudget) {
 
 }
 
-func main() {
+func homeBudgetExercise() {
 	homeBudget := load()
 	processArgs(homeBudget)
 	homeBudget.PrintSummary()
@@ -803,3 +804,14 @@ find - przeszukuje i drukuje ścieżki plików i/lub katalogów, których nazwy 
 grep - wyszukuje i drukuje wiersze zawierające wskazany tekst/wzorzec ze wskazanych plików/ścieżek
 */
 
+func echo() {
+	if len(os.Args) > 1 {
+		args := os.Args[1:]
+		output := strings.Join(args, " ")
+		fmt.Println(output)
+	}
+}
+
+func main() {
+	echo()
+}
