@@ -439,7 +439,7 @@ func Run() {
 */
 
 func Run() {
-	Orders()
+	ProducerConsumer()
 }
 
 // https://en.wikipedia.org/wiki/Dining_philosophers_problem
