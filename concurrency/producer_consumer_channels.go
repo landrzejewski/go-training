@@ -8,6 +8,7 @@ import (
 
 func producer(index int, ch chan string, wg *sync.WaitGroup) {
 	for i := 0; i < 5; i++ {
+		fmt.Println("Sending message", index)
 		ch <- fmt.Sprintf("Producer %v send %v", index, i)
 		time.Sleep(1 * time.Second)
 	}
@@ -24,15 +25,15 @@ func consumer(index int, ch chan string, wg *sync.WaitGroup) {
 	  		}
 	  		fmt.Printf("Consumer %v Received: %s\n", index, msg)
 	 	case <-time.After(10 * time.Second):
+			fmt.Println("Consumer is going down", index)
 	  		wg.Done()
 	 	}
-   
 	}
 	wg.Done()
 }
 
 func ProducerConsumer() {
-	ch := make(chan string)
+	ch := make(chan string, 10)
 	var wg sync.WaitGroup
    
 	for i := 0; i < 2; i++ {
@@ -48,3 +49,4 @@ func ProducerConsumer() {
 	wg.Wait()
 	close(ch)
 }
+
