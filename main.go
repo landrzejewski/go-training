@@ -1,9 +1,9 @@
 package main
 
 import (
-	"training.pl/examples/commands"
+	"training.pl/examples/concurrency"
 )
 
 func main() {
-	commands.Grep()
+	concurrency.Run()
 }
