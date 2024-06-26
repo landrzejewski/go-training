@@ -1,8 +1,6 @@
 package concurrency
 
 import (
-	"fmt"
-	"time"
 )
 
 /*
@@ -353,10 +351,96 @@ func Run() {
 }
 */
 
+// Channels
 
+/*
+func execute(in <-chan string, out chan<- string) {
+	for {
+		// message, isCLosed := <-in
+		message := <-in
+		out <- fmt.Sprintf("Echo: %s", message)
+	}
+}
 
+func Run() {
+	in := make(chan string)
+	out := make(chan string)
+	go execute(in, out)
+	var input string
+	for {
+		fmt.Scanln(&input)
+		if input == "q" {
+			break
+		}
+		in <- input
+		echo := <- out
+		fmt.Println(echo)
+	}
+	close(in)
+	close(out)
+}
+*/
 
+/*
+func producerOne(channel chan string) {
+	for {
+		time.Sleep(5 * time.Second)
+		channel <- "Data from producer one"
+	}
+}
 
+func producerTwo(channel chan string) {
+	for {
+		time.Sleep(2 * time.Second)
+		channel <- "Data from producer two"
+	}
+}
+
+func Run() {
+	channelOne := make(chan string)
+	channelTwo := make(chan string)
+
+	go producerOne(channelOne)
+	go producerTwo(channelTwo)
+
+	for {
+		select {
+		case messageOne := <- channelOne:
+			fmt.Println(messageOne, "case1") // w przypadku case z tym samym źródłem wybierany jest przypadkowy 
+		case messageOne := <- channelOne:
+			fmt.Println(messageOne, "case2")
+		case messageTwo := <- channelTwo:
+			fmt.Println(messageTwo, "case3")
+		}
+	}
+}
+*/
+
+/*
+func listener(channel chan int) {
+	for {
+		value := <- channel
+		fmt.Println("Consuming", value)
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func Run() {
+	channel := make(chan int, 10)
+	defer close(channel)
+	go listener(channel)
+
+	for i := 0; i <= 50; i++ {
+		channel <- i
+		fmt.Println("Sent", i)
+	}
+	fmt.Println("Done")
+}
+*/
+
+func Run() {
+
+}
 
 
 
