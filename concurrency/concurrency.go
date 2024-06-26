@@ -442,10 +442,5 @@ func Run() {
 	Orders()
 }
 
-
-
-
-
-
 // https://en.wikipedia.org/wiki/Dining_philosophers_problem
 // https://en.wikipedia.org/wiki/Sleeping_barber_problem
