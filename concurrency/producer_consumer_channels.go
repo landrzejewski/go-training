@@ -3,22 +3,22 @@ package concurrency
 import (
 	"fmt"
 	"math/rand"
+	"sync/atomic"
 	"time"
+	"github.com/fatih/color"
 )
 
-const MAX_ORDER_COUNT int = 20
+const MAX_ORDER_COUNT int = 1000
 
 var totalOrders, successOrders, failureOrders int
+var currentOrderNumber int64 = 0
 
 type Producer struct {
-	success chan Order
-	failure chan chan error
+	orders chan Order
 }
 
-func (p *Producer) Close() error {
-	channel := make(chan error)
-	p.failure <- channel
-	return <- channel
+func (p *Producer) Close() {
+	close(p.orders)
 }
 
 type Order struct {
@@ -29,11 +29,11 @@ type Order struct {
 
 func createOrder(orderNumber int) *Order {
 	if orderNumber <= MAX_ORDER_COUNT {
-		delay := rand.Intn(5) + 1
-		successRate := rand.Intn(15)
+		delay := rand.Intn(2) + 1
+		successRate := rand.Intn(30)
 		
 		fmt.Printf("Creating order with number %d\n", orderNumber)
-		time.Sleep(time.Duration(delay) * time.Second)
+		time.Sleep(time.Duration(delay) * time.Millisecond)
 		message := ""
 
 		success := false
@@ -60,40 +60,36 @@ func createOrder(orderNumber int) *Order {
 }
 
 func produce(producer *Producer) {
-	orderNumber := 0
 	for {
-		orderNumber++
-		order := createOrder(orderNumber)
+		atomic.AddInt64(&currentOrderNumber, 1)
+		order := createOrder(int(currentOrderNumber))
 		if order != nil {
-			select {
-			case producer.success <- *order:
-			case errorChannel := <- producer.failure:
-				close(producer.success)
-				close(errorChannel)
-			}
+			producer.orders <- *order
+		} else {
+			break
 		}
 	}
 }
 
 func Orders() {
 	producer := &Producer{
-		success: make(chan Order),
-		failure: make(chan chan error),
+		orders: make(chan Order),
 	}
 	go produce(producer)
+	go produce(producer)
+	go produce(producer)
 
-	for order := range producer.success {
-		if order.number <= MAX_ORDER_COUNT {
+	for order := range producer.orders {
+		if order.number < MAX_ORDER_COUNT {
 			if order.success {
-				fmt.Printf("Order with number %d deliverd\n", order.number)
+				color.Green("Order with number %d deliverd", order.number)
 			} else {
-				fmt.Printf("Failed to deliver order with number %d (%v)\n", order.number, order.message)
+				color.Red("Failed to deliver order with number %d (%v)", order.number, order.message)
 			}
 		} else {
-			err := producer.Close()
-			if (err != nil) {
-				fmt.Println("Closing channel failed")
-			}
+			time.Sleep(5 * time.Second)
+			producer.Close()
 		}
 	}
+	color.Yellow("Stats successCount: %d, failureCount: %d, total: %d", successOrders, failureOrders, totalOrders)
 }
