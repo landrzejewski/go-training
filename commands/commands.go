@@ -16,8 +16,10 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -198,4 +200,60 @@ func Find() {
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
+}
+
+func grep(pattern, path string) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		log.Fatalf("Failed to compile regex pattern: %v", err)
+	}
+
+	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			log.Printf("Failed to open file %s: %v", path, err)
+			return nil
+		}
+		defer file.Close()
+
+		lineNumber := 0
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			lineNumber++
+			if re.MatchString(line) {
+				fmt.Printf("%s (line: %d): %s\n", path, lineNumber, line)
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			log.Printf("Error reading file %s: %v", path, err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Fatalf("Error walking the path %s: %v", path, err)
+	}
+}
+
+func Grep() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: grep <pattern> <path>")
+		os.Exit(1)
+	}
+
+	pattern := os.Args[1]
+	path := os.Args[2]
+
+	grep(pattern, path)
 }

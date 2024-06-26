@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	commands.Find()
+	commands.Grep()
 }
