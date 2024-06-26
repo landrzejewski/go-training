@@ -38,10 +38,10 @@ func createOrder(orderNumber int) *Order {
 
 		success := false
 		if successRate <= 2{
-			message = fmt.Sprintf("We ran out of products,  order with number %d failed", orderNumber)
+			message = "We ran out of products"
 			failureOrders++
 		} else if successRate <= 5 {
-			message = fmt.Sprintf("Machine is broken, order with number %d failed", orderNumber)
+			message = "Machine is broken"
 			failureOrders++
 		} else {
 			message = fmt.Sprintf("Order with number %d created", orderNumber)
@@ -67,7 +67,6 @@ func produce(producer *Producer) {
 		if order != nil {
 			select {
 			case producer.success <- *order:
-				fmt.Printf("Order with number %d ready\n", order.number)
 			case errorChannel := <- producer.failure:
 				close(producer.success)
 				close(errorChannel)
@@ -88,7 +87,7 @@ func Orders() {
 			if order.success {
 				fmt.Printf("Order with number %d deliverd\n", order.number)
 			} else {
-				fmt.Printf("Failed to deliver order with number %d\n", order.number)
+				fmt.Printf("Failed to deliver order with number %d (%v)\n", order.number, order.message)
 			}
 		} else {
 			err := producer.Close()
