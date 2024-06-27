@@ -64,13 +64,13 @@ func (shop *BarberShop) addBarber(barber string) {
 }
 
 func (shop *BarberShop) cutHait(barber, client string) {
-	color.Green("%s is cutting %s's hair", barber, client)
+	color.Yellow("%s is cutting %s's hair", barber, client)
 	time.Sleep(shop.HairCutDuration)
-	color.Green("%s is finished cutting %s's hair", barber, client)
+	color.Yellow("%s is finished cutting %s's hair", barber, client)
 }
 
 func (shop *BarberShop) sendBarberHome(barber string) {
-	color.Cyan("%s is going home", barber)
+	color.Yellow("%s is going home", barber)
 	shop.BarberDoneChannel <- true 
 }
 
@@ -81,11 +81,11 @@ func (shop *BarberShop) closeShop() {
 	for a := 1; a <= shop.NumberOfBarbers; a++ {
 		<- shop.BarberDoneChannel
 	}
-	color.Green("The barbershop is now closed")
+	color.Cyan("The barbershop is now closed")
 }
 
 func (shop *BarberShop) addClient(client string) {
-	color.Green("%s arrives", client)
+	color.Yellow("%s arrives", client)
 	if shop.Open {
 		select {
 		case shop.CleintsChannel <- client:
@@ -100,7 +100,7 @@ func (shop *BarberShop) addClient(client string) {
 
 const timeOpen = 10 * time.Second
 
-func Run() {
+func barber() {
 	shopClosing := make(chan bool)
 	closed := make(chan bool)
 
@@ -112,7 +112,7 @@ func Run() {
 		CleintsChannel: make(chan string),
 		Open: true,
 	}
-	color.Green("Barber shop is open")
+	color.Cyan("Barber shop is open")
 
 	shop.addBarber("Jan")
 	shop.addBarber("Marek")
