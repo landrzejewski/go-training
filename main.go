@@ -1,126 +1,95 @@
 package main
 
 import (
-	"database/sql"
-	"strconv"
-
-	_ "github.com/lib/pq"
-
+	"bufio"
 	"fmt"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"net"
+	"os"
+	"sync"
 )
 
-type User struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+const serverAddress = "localhost:9000"
+
+func main () {
+	connection, err := net.Dial("tcp", serverAddress)
+	if err != nil {
+		fmt.Println("Error connecting on:", serverAddress )
+	}
+	defer connection.Close()
+
+	go func() {
+		for {
+			message, err := bufio.NewReader(connection).ReadString('\n')
+			if err != nil {
+				fmt.Println("Disconnected form:", serverAddress )
+				return
+			}
+			fmt.Print("Message: ", message)
+		}
+	}()
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		input := scanner.Text()
+		_, err :=  fmt.Fprintf(connection, "%s\n", input)
+		if err != nil {
+			fmt.Println("Error sending message:", serverAddress )
+			return
+		}
+	}
 }
 
-var database *sql.DB
-
-func main() {
-	db, err := sql.Open("postgres", "postgres://admin:admin@localhost/users?sslmode=disable")
+func main1() {
+	listener, err := net.Listen("tcp", serverAddress)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error listening on:", serverAddress )
 	}
+	defer listener.Close()
+	fmt.Println("Listening on:", serverAddress )
 
-	db.Query("create table if not exists users (id serial primary key, name varchar(100), email varchar(50))")
-	database = db
+	broadcast := make(chan string)
+	connections := make([]net.Conn, 0)
+	mutex := sync.Mutex{}
 
-	router := gin.Default()
-	router.GET("/users", getUsers)
-	router.GET("/users/:id", getUserById)
-	router.POST("/users", createUser)
-	router.PUT("/users/:id", updateUser)
-	router.DELETE("/users/:id", deleteUser)
-	router.Run(":8080")
+	go func() {
+		for {
+			message := <- broadcast
+			mutex.Lock()
+			for _, connection := range connections {
+				fmt.Println("Sending to", connection)
+				_, err := fmt.Fprintf(connection, "%s", message)
+				if err != nil {
+					fmt.Println("Error sending:", err)
+				}
+			}
+			mutex.Unlock()
+		}
+	}()
+
+	for {
+		connection, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection:", err.Error())
+			os.Exit(1)
+		}
+		fmt.Println("Client connected:", connection.RemoteAddr())
+		mutex.Lock()
+		connections = append(connections, connection)
+		mutex.Unlock()
+		go hadleConnection(connection, broadcast)
+	}
 }
 
-func getUsers(c *gin.Context) {
-	rows, err := database.Query("select * from users")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	var users []User = make([]User, 0)
-	for rows.Next() {
-		var user User = User{}
-		rows.Scan(&user.ID, &user.Name, &user.Email)
-		users = append(users, user)
-	}
-	c.JSON(http.StatusOK, users)
-}
-
-func getUserById(c *gin.Context) {
-	 id, err := strconv.Atoi(c.Param("id"))
-	 if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
-		return
-	 }
-	 
-	 rows, err := database.Query("select * from users where id = $1", id)
-	 if err != nil {
-		 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		 return
-	 }
-	 rows.Next()
-	 var user User = User{}
-	 rows.Scan(&user.ID, &user.Name, &user.Email)
-	 if user.ID == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-	 }
-	 c.JSON(http.StatusOK, user)
-}
-
-func createUser(c *gin.Context) {
-	var user User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err := database.QueryRow("insert into users(name, email) values($1, $2) returning id", &user.Name, &user.Email).Scan(&user.ID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	
-	c.JSON(http.StatusCreated, user)
-}
-
-func updateUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-	   c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
-	   return
-	}
-
-	var updatedUser User
-	if err := c.ShouldBindJSON(&updatedUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	_, err = database.Exec("update users set name = $1, email = $2 where id = $3", updatedUser.Name, updatedUser.Email, id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-
-	 c.JSON(http.StatusOK, gin.H{})
-}
-
-func deleteUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-	   c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
-	   return
-	}
-	_, err = database.Exec("delete from users where id = $1", id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
+func hadleConnection(connction net.Conn, broadcast chan<- string) {
+	defer connction.Close()
+	buffer := make([]byte, 1024)
+	for {
+		size, err := connction.Read(buffer)
+		if err != nil {
+			fmt.Println("Error reading from connection:", err.Error())
+			os.Exit(1)
+		}
+		message := string(buffer[:size])
+		broadcast <- message
 	}
 }
