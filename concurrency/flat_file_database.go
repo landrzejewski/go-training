@@ -73,6 +73,7 @@ type database struct {
 	file *os.File
 	mutex sync.Mutex
 	index map[int64]int64
+	cache map[int64]*userRecord
 }
 
 func (d *database) close() error {
@@ -146,7 +147,12 @@ func (d *database) appendRecord(record *userRecord) error {
 func (d *database) readRecord(id int64) (*userRecord, error) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	
+
+	if record, found := d.cache[id]; found {
+		fmt.Println("Reading from cache")
+		return record, nil
+	}
+
 	offset, found := d.index[id]
 	if !found {
 		return nil, fmt.Errorf("Record not found")
@@ -157,7 +163,23 @@ func (d *database) readRecord(id int64) (*userRecord, error) {
 		return nil, err
 	}
 
+	d.cache[id] = record
+
 	return record, nil
+}
+
+func (d *database) UpdateRecord(record *userRecord) error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	offset, found := d.index[record.getId()]
+	if !found {
+		return fmt.Errorf("record not found")
+	}
+
+	d.cache[record.getId()] = record
+
+	return d.write(record, offset)
 }
 
 func newDatabase(filePath string) (*database, error) {
@@ -169,6 +191,7 @@ func newDatabase(filePath string) (*database, error) {
 		file,
 		sync.Mutex{},
 		make(map[int64]int64),
+		make(map[int64]*userRecord),
 	}
 
 	err = db.loadIndex() 
@@ -192,8 +215,13 @@ func Run() {
 	}
 	defer db.close()
 
-	db.appendRecord(newUserRecord(3, "Marek", "Nowak", 40))
+	// db.appendRecord(newUserRecord(3, "Marek", "Nowak", 40))
 	record, _ := db.readRecord(3)
 	fmt.Println(record.getId(), record.getFirstName(), record.getLastName(), record.getAge())
-
+	record, _ = db.readRecord(3)
+	fmt.Println(record.getId(), record.getFirstName(), record.getLastName(), record.getAge())
+	
+	db.UpdateRecord(newUserRecord(3, "Michał", "Nowak", 40))
+	record, _ = db.readRecord(3)
+	fmt.Println(record.getId(), record.getFirstName(), record.getLastName(), record.getAge())
 }
