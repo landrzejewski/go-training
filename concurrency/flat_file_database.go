@@ -28,15 +28,51 @@ const (
 )
 
 type userRecord struct {
-	id [idSize]byte
-	firstName [firstNameSize]byte
-	lastName [lastNameSize]byte
-	age [ageSize]byte
+	Id [idSize]byte
+	FirstName [firstNameSize]byte
+	LastName [lastNameSize]byte
+	Age [ageSize]byte
+}
+
+func (u *userRecord) getId() int64 {
+	var id int64
+	binary.Read(bytes.NewReader(u.Id[:]), binary.LittleEndian, &id)
+	return id
+}
+
+func (u *userRecord) getFirstName() string {
+	return string(u.FirstName[:])
+}
+
+func (u *userRecord) getLastName() string {
+	return string(u.LastName[:])
+}
+
+func (u *userRecord) getAge() int64 {
+	var age int64
+	binary.Read(bytes.NewReader(u.Age[:]), binary.LittleEndian, &age)
+	return age
+}
+
+func newUserRecord(id int64, firstName, lastName string, age int64) *userRecord {
+	var firstNameBytes [firstNameSize]byte 
+	copy(firstNameBytes[:], firstName)
+
+	var lastNameBytes [lastNameSize]byte 
+	copy(lastNameBytes[:], lastName)
+
+	return &userRecord{
+		Id: toByteArray(id),
+		FirstName: firstNameBytes,
+		LastName: lastNameBytes,
+		Age: toByteArray(age),
+	}
 }
 
 type database struct {
 	file *os.File
 	mutex sync.Mutex
+	index map[int64]int64
 }
 
 func (d *database) close() error {
@@ -56,14 +92,72 @@ func (d * database) write(record *userRecord, offset int64) error {
 	return nil
 }
 
-func (d *database) append(record *userRecord) error {
+func (d *database) read(offset int64) (*userRecord, error) {
+	buffer := make([]byte, recordSize)
+	_, err := d.file.ReadAt(buffer, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	record := userRecord{}
+	reader := bytes.NewReader(buffer)
+	err = binary.Read(reader, binary.LittleEndian, &record)
+	if err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
+func (d *database) loadIndex() error {
+	stats, err := d.file.Stat()
+	if err != nil {
+		return err
+	}
+	if stats.Size() == 0 {
+		return nil
+	}
+
+	for offset := int64(0); offset < stats.Size(); offset += recordSize {
+		record, err := d.read(offset)
+		if err != nil {
+			return err
+		}
+		id := record.getId()
+		d.index[id] = offset
+	}
+	return nil
+}
+
+func (d *database) appendRecord(record *userRecord) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 	offset, err := d.file.Seek(0, io.SeekEnd)
 	if err != nil {
 		return err
 	}
-	return d.write(record, offset)
+	err = d.write(record, offset)
+	if err != nil {
+		return err
+	}
+	d.index[record.getId()] = offset
+	return nil
+}
+
+func (d *database) readRecord(id int64) (*userRecord, error) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	
+	offset, found := d.index[id]
+	if !found {
+		return nil, fmt.Errorf("Record not found")
+	}
+
+	record, err := d.read(offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return record, nil
 }
 
 func newDatabase(filePath string) (*database, error) {
@@ -71,10 +165,18 @@ func newDatabase(filePath string) (*database, error) {
 	if err != nil {
 		return nil, err
 	} 
-	return &database{
+	db := &database{
 		file,
 		sync.Mutex{},
-	}, nil
+		make(map[int64]int64),
+	}
+
+	err = db.loadIndex() 
+	if err != nil {
+		return nil, err
+	} 
+
+	return db, nil
 }
 
 func toByteArray(i int64) (arr [8]byte) {
@@ -90,22 +192,8 @@ func Run() {
 	}
 	defer db.close()
 
-	var firstNameBytes [firstNameSize]byte 
-	copy(firstNameBytes[:], "Jan")
-
-	var lastNameBytes [lastNameSize]byte 
-	copy(lastNameBytes[:], "Nowak")
-
-	record := userRecord{
-		id: toByteArray(1),
-		firstName: firstNameBytes,
-		lastName: lastNameBytes,
-		age: toByteArray(30),
-	}
-
-	err = db.append(&record)
-	if err != nil {
-		fmt.Println(err)
-	}
+	db.appendRecord(newUserRecord(3, "Marek", "Nowak", 40))
+	record, _ := db.readRecord(3)
+	fmt.Println(record.getId(), record.getFirstName(), record.getLastName(), record.getAge())
 
 }
