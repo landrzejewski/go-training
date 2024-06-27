@@ -207,6 +207,7 @@ func toByteArray(i int64) (arr [8]byte) {
     return
 }
 
+/*
 func Run() {
 	db, err := newDatabase("users.db")
 	if err != nil {
@@ -225,3 +226,4 @@ func Run() {
 	record, _ = db.readRecord(3)
 	fmt.Println(record.getId(), record.getFirstName(), record.getLastName(), record.getAge())
 }
+*/
