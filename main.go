@@ -1,9 +1,16 @@
 package main
 
-import (
-	"training.pl/examples/exercises"
-)
+import "training.pl/examples/exercises"
 
 func main() {
-	exercises.Budget()
+	/*
+		budget := exercises.Budget()
+		var newEntry = exercises.NewBudgetEntry(100.0, exercises.Withdraw, "Cinema")
+		budget.Add(newEntry)
+		budget.FromArgs()
+		budget.PrintSummary()
+		budget.Save()
+	*/
+
+	exercises.Echo()
 }
