@@ -3,18 +3,29 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
+	// "training.pl/examples/utils" // prefiks to nazwa pakietu - utils
+	// . "training.pl/examples/utils" // import bez prefiksu
+	// u "training.pl/examples/utils" // nistandardowy alias
+	_ "training.pl/examples/utils" // ignorowanie nieużywanego importu
 )
 
 func main() {
+	// utils.Add(1,2)
+	// Add(1, 2)
+	// u.Add(1,2)
+}
+
+func structs() {
 	fmt.Println(person{"Jan", "Kowalski", 32})            // można nie podawać kluczy/nazw pól, ale wtedy ważna jest kolejność
 	user := person{lastName: "Nowak", firstName: "Marek"} // niepodanie wartości skutkuje ustawieniem pola na wartość domyślną
-	// otherUser := user // utworzeni kopii
+	// otherUser := user // utworzenie kopii
 	fmt.Println(&user)
 	fmt.Println(newPerson("Jan", "Kowalski", 32))
 	user.lastName = "Test"
-	othetUser := &user
-	fmt.Println(othetUser.lastName)
+	otherUser := &user // utworzenie referencji
+	fmt.Println(otherUser.lastName)
 	user.setAge(20)
 	fmt.Println(user.description())
 
@@ -27,12 +38,89 @@ func main() {
 		0.0,
 	}
 	fmt.Println(&account)
+
+	monetaryAmountExercise()
 }
 
-// Struktura monetaryAmount, która opisuje wartosci walutowe (zawiera kwotę i walutę)
-// Struktura powinna umożliwiać dodawanie i odejmowanie innych wartości walutowych (zaimplementuj metody add, subtract),
-// jeżeli waluta jest inna to zwracamy err
-// Dodaj funkcję konstruktora
+// custom types / type aliases
+type text string
+
+func (t *text) print() {
+	fmt.Println(*t)
+}
+
+func typeAliases() {
+	var helloText text = "Hello"
+	helloText.print()
+}
+
+func interfaces() {
+	printArea(&rectangle{10, 20})
+	printArea(&circle{100})
+}
+
+type display interface {
+	getInfo() string
+}
+
+type shape interface {
+	area() float64
+	// getInfo() string
+	// display
+}
+
+type rectangle struct {
+	width, height float64
+}
+
+type circle struct {
+	radius float64
+}
+
+func (r *rectangle) area() float64 {
+	return r.height * r.width
+}
+
+func (c *circle) area() float64 {
+	return math.Pi * c.radius * c.radius
+}
+
+func printArea(shape shape) {
+	fmt.Printf("Area of %T is equal %.2f\n", shape, shape.area())
+}
+
+// Struct embedding
+type address struct {
+	street      string
+	houseNumber int
+}
+
+func (a *address) description() string {
+	return fmt.Sprintf("%v %d", a.street, a.houseNumber)
+}
+
+type user struct {
+	name string
+	// street string
+	address
+}
+
+// func (u *user) description() string {
+// 	return fmt.Sprintf("%v", u.name)
+// }
+
+func structEmbedding() {
+	myUser := user{
+		name: "Jan Kowalski",
+		address: address{
+			street:      "Dobra",
+			houseNumber: 38,
+		},
+	}
+	fmt.Println(myUser)
+	fmt.Println(myUser.address.description())
+	fmt.Println(myUser.description())
+}
 
 type person struct {
 	firstName string
@@ -40,7 +128,7 @@ type person struct {
 	age       int
 }
 
-// w przypadku kiedy nie chcemy, aby wywołanie metody spowodowało utworzenie kopii struktoru należy użyć wskaźnika/*
+// w przypadku kiedy nie chcemy, aby wywołanie metody spowodowało utworzenie kopii struktory należy użyć wskaźnika/*
 func (p *person) description() string {
 	return fmt.Sprintf("{name: %v %v, age: %d}", p.firstName, p.lastName, p.age)
 }
@@ -166,7 +254,7 @@ func show(value int, index int) {
 	fmt.Printf("Value: %v\n", value)
 }
 
-func sumAll(values ...int) (sum int) { // zmienna ilośc argumentów wejściowych, nazwany rezultat
+func sumAll(values ...int) (sum int) { // zmienna ilość argumentów wejściowych, nazwany rezultat
 	for _, value := range values {
 		sum += value
 	}
@@ -550,5 +638,88 @@ func basics() {
 	for {
 		fmt.Println("GO")
 		break
+	}
+}
+
+// Struktura monetaryAmount, która opisuje wartosci walutowe (zawiera kwotę i walutę)
+// Struktura powinna umożliwiać dodawanie i odejmowanie innych wartości walutowych (zaimplementuj metody add, subtract),
+// jeżeli waluta jest inna to zwracamy err
+// Dodaj funkcję konstruktora
+
+type monetaryAmount struct {
+	value    float64
+	currency string
+}
+
+var CurrencyMismatch = fmt.Errorf("currnency mismatch")
+
+func newMonetaryAmount(value float64, currency string) *monetaryAmount {
+	return &monetaryAmount{value, currency}
+}
+
+func (ma *monetaryAmount) add(monetaryAmount *monetaryAmount) error {
+	if ma.currency != monetaryAmount.currency {
+		return CurrencyMismatch
+	}
+	ma.value += monetaryAmount.value
+	return nil
+}
+
+func (ma *monetaryAmount) subtract(monetaryAmount *monetaryAmount) error {
+	if ma.currency != monetaryAmount.currency {
+		return CurrencyMismatch
+	}
+	ma.value -= monetaryAmount.value
+	return nil
+}
+
+/*func (ma monetaryAmount) addImmutable(amount *monetaryAmount) (*monetaryAmount, error) {
+	if ma.currency != amount.currency {
+		return nil, errors.New("incompatible currency")
+	}
+	ma.value += amount.value
+	return &ma, nil
+}*/
+
+func monetaryAmountExercise() {
+	amount := newMonetaryAmount(100.0, "PLN")
+	otherAmount := newMonetaryAmount(100.0, "PLN")
+	amount.add(otherAmount)
+	fmt.Println(amount)
+}
+
+// enums
+type responseStatus int
+
+const (
+	ok = iota
+	noContent
+	notFound
+)
+
+var statusName = map[responseStatus]string{
+	ok:        "Ok",
+	noContent: "No content",
+	notFound:  "Not found",
+}
+
+func task() responseStatus {
+	// logika
+	return ok
+}
+
+type response struct {
+	body   string
+	status responseStatus
+}
+
+func enums() {
+	status := notFound
+
+	switch status {
+	case ok, noContent:
+		fmt.Println("Success")
+	case notFound:
+		fmt.Printf("Failure: %v", statusName[responseStatus(status)])
 	}
 }
