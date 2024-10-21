@@ -5,3 +5,7 @@ numerowanie wierszy można wyłączyć dla pustych wierszy (przełącznik -nb)
 */
 
 package exercises
+
+func Cat() {
+
+}

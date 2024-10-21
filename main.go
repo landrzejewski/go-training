@@ -12,5 +12,5 @@ func main() {
 		budget.Save()
 	*/
 
-	exercises.Echo()
+	exercises.Cat()
 }
