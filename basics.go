@@ -293,7 +293,16 @@ func readingAndParsingStandardInput() {
 
 func readingTextFile() {
 	file, _ := os.Open("words.txt")
+
 	defer file.Close()
+
+	/*defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(file)*/
+
 	r := bufio.NewReader(file)
 	for {
 		line, _, err := r.ReadLine()
