@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	// "training.pl/examples/utils" // prefiks to nazwa pakietu - utils
 	// . "training.pl/examples/utils" // import bez prefiksu
@@ -287,6 +289,21 @@ func readingAndParsingStandardInput() {
 
 	parsedValue, _ := strconv.ParseFloat(formattedValue, 64)
 	fmt.Println(parsedValue)
+}
+
+func readingTextFile() {
+	file, _ := os.Open("words.txt")
+	defer file.Close()
+	r := bufio.NewReader(file)
+	for {
+		line, _, err := r.ReadLine()
+		if len(line) > 0 {
+			fmt.Printf("ReadLine: %q\n", line)
+		}
+		if err != nil {
+			break
+		}
+	}
 }
 
 func pointers() {
