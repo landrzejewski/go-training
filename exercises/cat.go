@@ -6,6 +6,12 @@ numerowanie wierszy można wyłączyć dla pustych wierszy (przełącznik -nb)
 
 package exercises
 
-func Cat() {
+import "flag"
 
+func Cat() {
+	numberLines := flag.Bool("n", false, "Number the output lines")
+	numberNonEmptyLines := flag.Bool("nb", false, "Number the output lines, but not empty lines")
+	flag.Parse()
+
+	files := flag.Args()
 }
