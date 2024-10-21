@@ -17,7 +17,7 @@ func main() {
 	// Add(1, 2)
 	// u.Add(1,2)
 
-	exercises.TicTacToeExercise()
+	exercises.Budget()
 }
 
 func structs() {

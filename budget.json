@@ -1,0 +1,34 @@
+{
+  "entries": [
+    {
+      "amount": 200,
+      "operationType": 0,
+      "timestamp": "2024-06-25T11:52:14.6617633+02:00",
+      "description": "Salary"
+    },
+    {
+      "amount": 50,
+      "operationType": 1,
+      "timestamp": "2024-06-25T11:52:14.6617633+02:00",
+      "description": "Cinema"
+    },
+    {
+      "amount": 100,
+      "operationType": 0,
+      "timestamp": "2024-06-25T12:12:41.2054343+02:00",
+      "description": "Bonus"
+    },
+    {
+      "amount": 1000,
+      "operationType": 1,
+      "timestamp": "2024-06-25T12:14:08.0314627+02:00",
+      "description": "New phone"
+    },
+    {
+      "amount": 300,
+      "operationType": 0,
+      "timestamp": "2024-06-25T12:35:06.2926918+02:00",
+      "description": "Bonus"
+    }
+  ]
+}
