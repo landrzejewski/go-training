@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"training.pl/examples/exercises" // ignorowanie nieużywanego importu
 	// "training.pl/examples/utils" // prefiks to nazwa pakietu - utils
 	// . "training.pl/examples/utils" // import bez prefiksu
 	// u "training.pl/examples/utils" // nistandardowy alias
@@ -15,6 +16,8 @@ func main() {
 	// utils.Add(1,2)
 	// Add(1, 2)
 	// u.Add(1,2)
+
+	exercises.TicTacToeExercise()
 }
 
 func structs() {
@@ -38,8 +41,6 @@ func structs() {
 		0.0,
 	}
 	fmt.Println(&account)
-
-	monetaryAmountExercise()
 }
 
 // custom types / type aliases
@@ -639,53 +640,6 @@ func basics() {
 		fmt.Println("GO")
 		break
 	}
-}
-
-// Struktura monetaryAmount, która opisuje wartosci walutowe (zawiera kwotę i walutę)
-// Struktura powinna umożliwiać dodawanie i odejmowanie innych wartości walutowych (zaimplementuj metody add, subtract),
-// jeżeli waluta jest inna to zwracamy err
-// Dodaj funkcję konstruktora
-
-type monetaryAmount struct {
-	value    float64
-	currency string
-}
-
-var CurrencyMismatch = fmt.Errorf("currnency mismatch")
-
-func newMonetaryAmount(value float64, currency string) *monetaryAmount {
-	return &monetaryAmount{value, currency}
-}
-
-func (ma *monetaryAmount) add(monetaryAmount *monetaryAmount) error {
-	if ma.currency != monetaryAmount.currency {
-		return CurrencyMismatch
-	}
-	ma.value += monetaryAmount.value
-	return nil
-}
-
-func (ma *monetaryAmount) subtract(monetaryAmount *monetaryAmount) error {
-	if ma.currency != monetaryAmount.currency {
-		return CurrencyMismatch
-	}
-	ma.value -= monetaryAmount.value
-	return nil
-}
-
-/*func (ma monetaryAmount) addImmutable(amount *monetaryAmount) (*monetaryAmount, error) {
-	if ma.currency != amount.currency {
-		return nil, errors.New("incompatible currency")
-	}
-	ma.value += amount.value
-	return &ma, nil
-}*/
-
-func monetaryAmountExercise() {
-	amount := newMonetaryAmount(100.0, "PLN")
-	otherAmount := newMonetaryAmount(100.0, "PLN")
-	amount.add(otherAmount)
-	fmt.Println(amount)
 }
 
 // enums
