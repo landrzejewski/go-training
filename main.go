@@ -12,6 +12,6 @@ func main() {
 		budget.Save()
 	*/
 
-	concurrency.Concurrency()
-	concurrency.ProducerConsumerClassic()
+	concurrency.Channels()
+
 }

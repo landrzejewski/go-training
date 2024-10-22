@@ -1,5 +1,10 @@
 package concurrency
 
+import (
+	"fmt"
+	"time"
+)
+
 /*
 func print(text string) {
 	fmt.Println(text)
@@ -214,6 +219,121 @@ func Run() {
 	fmt.Println("Current value:", money)
 }*/
 
+// Deadlocks
+
+/*var (
+	lock1 = sync.Mutex{}
+	lock2 = sync.Mutex{}
+)
+
+func blue() {
+	for {
+		fmt.Println("Blue: Acquiring lock1")
+		lock1.Lock()
+		fmt.Println("Blue: Acquiring lock2")
+		lock2.Lock()
+		fmt.Println("Blue: Both locks Acquired")
+		lock1.Unlock()
+		lock2.Unlock()
+		fmt.Println("Blue: Locks Released")
+	}
+}
+
+func red() {
+	for {
+		fmt.Println("Red: Acquiring lock2")
+		lock2.Lock()
+		fmt.Println("Red: Acquiring lock1")
+		lock1.Lock()
+		fmt.Println("Red: Both locks Acquired")
+		lock1.Unlock()
+		lock2.Unlock()
+		fmt.Println("Red: Locks Released")
+	}
+}
+
+func Run() {
+	go red()
+	go blue()
+	time.Sleep(20 * time.Second)
+	fmt.Println("Done")
+}
+*/
+// https://dev.to/ietxaniz/go-deadlock-detection-delock-library-1eig
+
+// Atomics
+
+/*
+var (
+	money int64 = 100
+	value = 10
+)
+
+func spend() {
+	for i := 1; i < 500; i++ {
+		atomic.AddInt64(&money, int64(-value))
+		fmt.Println("Spend: ", money)
+		time.Sleep(1 * time.Millisecond)
+	}
+	fmt.Println("Spend: Done")
+}
+
+func work() {
+	for i := 1; i < 500; i++ {
+		atomic.AddInt64(&money, int64(value))
+		fmt.Println("New income, current value:", money)
+		time.Sleep(1 * time.Millisecond)
+	}
+	fmt.Println("Work: Done")
+}
+
+func Run() {
+	go work()
+	go spend()
+
+	time.Sleep(10 * time.Second)
+	fmt.Println("Current value:", money)
+}
+*/
+
+// Cyclic barrier
+
+/*
+func execute(name string, sleepTime int, barrier *Barrier) {
+	for {
+		println(name, "running")
+		time.Sleep(time.Duration(sleepTime) * time.Second)
+		println(name, "is waiting on barrier")
+		barrier.Wait()
+	}
+}
+
+func Run() {
+	barrier := NewBarrier(3)
+	go execute("One", 3, barrier)
+	go execute("Two", 10, barrier)
+	go execute("Three", 6, barrier)
+	time.Sleep(100 * time.Second)
+}
+*/
+
+// Semaphore
+
+func Run() {
+	semaphore := NewSemaphore(5)
+	for i := 0; i < 100; i++ {
+		go func() {
+			semaphore.Acquire()
+			fmt.Println("Working", i)
+			time.Sleep(2 * time.Second)
+			fmt.Println("Releaseing permit", i)
+			semaphore.Release()
+		}()
+	}
+
+	time.Sleep(100 * time.Second)
+}
+
 func Concurrency() {
-	//	Run()
+	FindFiles()
 }
