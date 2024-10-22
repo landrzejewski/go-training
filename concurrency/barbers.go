@@ -9,7 +9,7 @@
 //
 //		- if there are no customers, the barber falls asleep in the chair
 //		- a customer must wake the barber if he is asleep a customer arrives while the barber is working, t
-//		- ihe customer leaves if all chairs are occupied and
+//		- the customer leaves if all chairs are occupied and
 //		  sits in an empty chair if it's available
 //		- when the barber finishes a haircut, he inspects the waiting room to see if there are any waiting customers
 //		  and falls asleep if there are none

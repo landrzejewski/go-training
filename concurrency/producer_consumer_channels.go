@@ -9,7 +9,7 @@ import (
 func channelProducer(index int, ch chan string, wg *sync.WaitGroup) {
 	for i := 0; i < 5; i++ {
 		fmt.Println("Sending message", index)
-		ch <- fmt.Sprintf("Data forom producer %v with value %v", index, i)
+		ch <- fmt.Sprintf("Data from producer %v with value %v", index, i)
 		time.Sleep(1 * time.Second)
 	}
 	wg.Done()
