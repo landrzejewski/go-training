@@ -1,11 +1,5 @@
 package concurrency
 
-import (
-	"fmt"
-	"sync"
-	"time"
-)
-
 /*
 func print(text string) {
 	fmt.Println(text)
@@ -178,7 +172,7 @@ func Run() {
 
 // Mutex + Signals
 
-var (
+/*var (
 	money                 = 100
 	mutex                 = sync.Mutex{}
 	moneyIsGraterThanZero = sync.NewCond(&mutex)
@@ -218,8 +212,8 @@ func Run() {
 
 	time.Sleep(10 * time.Second)
 	fmt.Println("Current value:", money)
-}
+}*/
 
 func Concurrency() {
-	Run()
+	//	Run()
 }

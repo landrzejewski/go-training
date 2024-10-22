@@ -13,4 +13,5 @@ func main() {
 	*/
 
 	concurrency.Concurrency()
+	concurrency.ProducerConsumerClassic()
 }
