@@ -13,7 +13,10 @@ func Channels() {
 		channel <- 2
 	}()
 
-	value := <-channel
+	value, isClose := <-channel
+	if !isClose {
+		fmt.Printf("channel closed, value is %v", value)
+	}
 	fmt.Println(value)
 	value = <-channel
 	fmt.Println(value)
