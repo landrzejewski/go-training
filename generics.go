@@ -14,11 +14,11 @@ func addFloat(a, b float64) float64 {
 // 	return a + b
 // }
 
-type Numeric interface {
-	int | float64 | int16
+type Number interface {
+	int64 | float64 | int16
 }
 
-func add[T Numeric](a, b T) T {
+func add[T Number](a, b T) T {
 	return a + b
 }
 
