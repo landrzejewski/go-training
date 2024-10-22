@@ -48,10 +48,10 @@ func cat(filename string, numberLines, numberNonEmptyLines bool) error {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	lineNumber := 1
-	printFn := createPrinter(numberLines, numberNonEmptyLines)
+	printer := createPrinter(numberLines, numberNonEmptyLines)
 	for scanner.Scan() {
 		line := scanner.Text()
-		printFn(&lineNumber, line)
+		printer(&lineNumber, line)
 	}
 	if err := scanner.Err(); err != nil {
 		return err

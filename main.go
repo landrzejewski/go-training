@@ -12,5 +12,5 @@ func main() {
 		budget.Save()
 	*/
 
-	exercises.Cat()
+	exercises.Find()
 }
