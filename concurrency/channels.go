@@ -57,21 +57,58 @@ func Channels() {
 		concurrently. If multiple channels are ready, one of them is selected at random.
 	*/
 
-	ch1 := make(chan string)
-	ch2 := make(chan string)
+	/*
+		ch1 := make(chan string)
+		ch2 := make(chan string)
 
-	go func() { ch1 <- "message from channel 1" }()
-	go func() { ch2 <- "message from channel 2" }()
+		go func() { ch1 <- "message from channel 1" }()
+		go func() { ch2 <- "message from channel 2" }()
 
-	for range 2 {
-		select {
-		case msg1 := <-ch1:
-			fmt.Println(msg1)
-		case msg2 := <-ch2:
-			fmt.Println(msg2)
-		case <-time.After(2 * time.Second):
-			fmt.Println("Task timed out")
+		for range 2 {
+			select {
+			case msg1 := <-ch1:
+				fmt.Println(msg1)
+			case msg2 := <-ch2:
+				fmt.Println(msg2)
+			case <-time.After(2 * time.Second):
+				fmt.Println("Task timed out")
+			}
+		}
+	*/
+
+}
+
+func broadcaster(msgCh <-chan int, listeners []chan int) {
+	for msg := range msgCh {
+		for _, listener := range listeners {
+			listener <- msg
 		}
 	}
+}
 
+func listener(id int, ch <-chan int) {
+	for msg := range ch {
+		fmt.Printf("Listener %d received: %d\n", id, msg)
+	}
+}
+
+func broadcast() {
+	msgCh := make(chan int)
+	listeners := make([]chan int, 3)
+
+	for i := range listeners {
+		listeners[i] = make(chan int)
+		go listener(i+1, listeners[i])
+	}
+
+	go broadcaster(msgCh, listeners)
+
+	// Send messages to the broadcast channel
+	for i := 0; i < 5; i++ {
+		msgCh <- i
+	}
+
+	// Allow time for all messages to be processed
+	time.Sleep(1 * time.Second)
+	close(msgCh)
 }
