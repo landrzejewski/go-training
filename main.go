@@ -1,7 +1,5 @@
 package main
 
-import "training.pl/examples/exercises"
-
 func main() {
 	/*
 		budget := exercises.Budget()
@@ -12,5 +10,5 @@ func main() {
 		budget.Save()
 	*/
 
-	exercises.Find()
+	Generics()
 }
