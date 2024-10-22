@@ -1,5 +1,7 @@
 package main
 
+import "training.pl/examples/concurrency"
+
 func main() {
 	/*
 		budget := exercises.Budget()
@@ -10,5 +12,5 @@ func main() {
 		budget.Save()
 	*/
 
-	Generics()
+	concurrency.Concurrency()
 }
