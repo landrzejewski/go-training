@@ -1,0 +1,15 @@
+POST localhost:8080/users
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Jan",
+  "email": "jan@training.pl"
+}
+
+###
+
+GET localhost:8080/users/1
+Accept: application/json
+Content-Type: application/json
