@@ -6,36 +6,65 @@ import (
 	"net"
 	"os"
 	"sync"
+	"training.pl/examples/utils"
 )
 
 const serverAddress = "localhost:9000"
+const bufferSize = 20
+
+type message struct {
+	sender net.Conn
+	bytes  []byte
+}
 
 func main() {
-	server()
+	if len(os.Args) > 1 {
+		client()
+	} else {
+		server()
+	}
 }
 
 func client() {
 	connection, err := net.Dial("tcp", serverAddress)
 	if err != nil {
-		fmt.Println("Error connecting on:", serverAddress)
+		fmt.Println("Connecting to server failed: ", err)
 	}
-	defer connection.Close()
+	defer func(connection net.Conn) {
+		err := connection.Close()
+		if err != nil {
+			fmt.Println("Closing connection failed: ", err)
+		}
+	}(connection)
 
 	go func() {
 		for {
-			message, err := bufio.NewReader(connection).ReadString('\n')
+			buffer := make([]byte, bufferSize)
+			_, err := bufio.NewReader(connection).Read(buffer)
 			if err != nil {
-				fmt.Println("Disconnected form:", serverAddress)
+				fmt.Println("Disconnected form: ", serverAddress)
 				return
 			}
-			fmt.Print("Message: ", message)
+			var message string
+			err = utils.FromBytes(buffer, &message)
+			if err != nil {
+				fmt.Println("Reading message failed: ", err)
+				return
+			}
+			fmt.Print(message + "\n")
 		}
 	}()
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		input := scanner.Text()
-		_, err := fmt.Fprintf(connection, "%s\n", input)
+		buffer := make([]byte, bufferSize)
+		data, _ := utils.ToBytes(scanner.Text())
+		if len(data) > bufferSize {
+			fmt.Println("Message too long")
+			continue
+		}
+		copy(buffer, data[:])
+		_, err := connection.Write(buffer)
 		if err != nil {
 			fmt.Println("Error sending message:", serverAddress)
 			return
@@ -46,53 +75,66 @@ func client() {
 func server() {
 	listener, err := net.Listen("tcp", serverAddress)
 	if err != nil {
-		fmt.Println("Error listening on:", serverAddress)
+		fmt.Println("Listening failed: ", err)
 	}
-	defer listener.Close()
+	defer func(listener net.Listener) {
+		err := listener.Close()
+		if err != nil {
+			fmt.Println("Closing server failed: ", err)
+		}
+	}(listener)
+
 	fmt.Println("Listening on:", serverAddress)
 
-	broadcast := make(chan string)
+	messages := make(chan *message)
 	connections := make([]net.Conn, 0)
-	mutex := sync.Mutex{}
+	mutex := sync.RWMutex{}
 
 	go func() {
 		for {
-			message := <-broadcast
-			mutex.Lock()
+			message := <-messages
+			mutex.RLock()
 			for _, connection := range connections {
-				_, err := fmt.Fprintf(connection, "%s", message)
-				if err != nil {
-					fmt.Println("Error sending:", err)
+				if connection != message.sender {
+					_, err := connection.Write(message.bytes)
+					if err != nil {
+						fmt.Println("Sending message failed: ", err)
+					}
 				}
 			}
-			mutex.Unlock()
+			mutex.RUnlock()
 		}
 	}()
 
 	for {
 		connection, err := listener.Accept()
 		if err != nil {
-			fmt.Println("Error accepting connection:", err.Error())
-			os.Exit(1)
+			fmt.Println("Accepting connection failed: ", err)
+			continue
 		}
 		fmt.Println("Client connected:", connection.LocalAddr())
 		mutex.Lock()
 		connections = append(connections, connection)
 		mutex.Unlock()
-		go handleConnection(connection, broadcast)
+		go handleConnection(connection, messages)
 	}
 }
 
-func handleConnection(connection net.Conn, broadcast chan<- string) {
-	defer connection.Close()
-	buffer := make([]byte, 1024)
-	for {
-		size, err := connection.Read(buffer)
+func handleConnection(connection net.Conn, messages chan<- *message) {
+	defer func(connection net.Conn) {
+		err := connection.Close()
 		if err != nil {
-			fmt.Println("Error reading from connection:", err.Error())
-			os.Exit(1)
+			fmt.Println("Closing connection failed: ", err)
 		}
-		message := string(buffer[:size])
-		broadcast <- message
+	}(connection)
+
+	buffer := make([]byte, bufferSize)
+	for {
+		_, err := connection.Read(buffer)
+		if err != nil {
+			fmt.Println("Reading from connection failed: ", err.Error())
+			break
+		}
+		messages <- &message{connection, buffer}
 	}
 }
