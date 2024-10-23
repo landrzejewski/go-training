@@ -3,9 +3,9 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "id": 1,
-  "name": "Jan",
-  "email": "jan@training.pl"
+  "firstName": "Jan",
+  "lastName": "Nowak",
+  "isActive": true
 }
 
 ###

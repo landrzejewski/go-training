@@ -10,8 +10,11 @@ package concurrency
 import (
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
 	"os"
 	"slices"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"training.pl/examples/utils"
@@ -45,20 +48,12 @@ type Database struct {
 	idGenerator IdGenerator
 }
 
+func (db *Database) saveSnapshot() {
+	buffer, _ := utils.ToBytes(db.records)
+	_ = os.WriteFile(db.file.Name()+stateFileExtension, buffer, 0666)
+}
+
 func (db *Database) Close() error {
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
-
-	buffer, err := utils.ToBytes(db.records)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(db.file.Name()+stateFileExtension, buffer, 0666)
-	if err != nil {
-		return err
-	}
-
 	return db.file.Close()
 }
 
@@ -79,6 +74,7 @@ func (db *Database) Insert(input interface{}) (*Record, error) {
 	}
 	record := Record{db.idGenerator.next(), offset, int64(length)}
 	db.records = append(db.records, record)
+	db.saveSnapshot()
 	return &record, nil
 }
 
@@ -123,23 +119,56 @@ func Db(filePath string) (*Database, error) {
 }
 
 type User struct {
-	FirstName string
-	LastName  string
-	IsActive  bool
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	IsActive  bool   `json:"isActive"`
 }
 
 func UsersDatabase() {
 	db, _ := Db("users.db")
 	defer db.Close()
+	router := gin.Default()
 
-	r1, _ := db.Insert(&User{"Jan", "Kowalski", true})
-	r2, _ := db.Insert(&User{"Jan", "Kowalski", false})
-	fmt.Println(r1, r2)
+	router.Use(func(ctx *gin.Context) {
+		ctx.Set("db", db)
+	})
 
+	router.POST("/users", createUser)
+	router.GET("/users/:id", getUserById)
+	router.Run(":8080")
+}
+
+type CreateUserResponse struct {
+	Id int64
+}
+
+func getDb(c *gin.Context) *Database {
+	db, _ := c.Get("db")
+	return db.(*Database)
+}
+
+func createUser(c *gin.Context) {
 	var user User
-	db.GetById(1, &user)
-	fmt.Println(&user)
-	var user2 User
-	db.GetById(2, &user2)
-	fmt.Println(&user2)
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	record, _ := getDb(c).Insert(&user)
+	c.Header("Location", fmt.Sprintf("/users/%v", record.Id))
+	c.JSON(http.StatusCreated, &CreateUserResponse{record.Id})
+}
+
+func getUserById(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
+		return
+	}
+	user := User{}
+	err = getDb(c).GetById(id, &user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
