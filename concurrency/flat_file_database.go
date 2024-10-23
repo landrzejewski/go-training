@@ -8,28 +8,30 @@ Pomyśl o optymalnym sposobie usuwania rekordów i ponownym wykorzystaniem miejs
 package concurrency
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"training.pl/examples/utils"
 )
 
 type IdGenerator interface {
-	next() any
+	next() int64
 }
 
 type Sequence struct {
 	counter int64
 }
 
-func (g *Sequence) next() any {
+func (g *Sequence) next() int64 {
 	counter := atomic.AddInt64(&g.counter, 1)
 	return counter
 }
 
 type Record struct {
-	Id     any
+	Id     int64
 	Offset int64
 	Length int64
 }
@@ -60,13 +62,17 @@ func (db *Database) Close() error {
 	return db.file.Close()
 }
 
-func (db *Database) Write(offset int64, input interface{}) (*Record, error) {
+func (db *Database) Insert(input interface{}) (*Record, error) {
 	buffer, err := utils.ToBytes(input)
 	if err != nil {
 		return nil, err
 	}
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
+	offset, err := db.file.Seek(0, 2)
+	if err != nil {
+		return nil, err
+	}
 	length, err := db.file.WriteAt(buffer, offset)
 	if err != nil {
 		return nil, err
@@ -76,19 +82,24 @@ func (db *Database) Write(offset int64, input interface{}) (*Record, error) {
 	return &record, nil
 }
 
-func (db *Database) Read(offset int64, size int64, output interface{}) error {
-	buffer := make([]byte, size)
+func (db *Database) GetById(id int64, output interface{}) error {
 	db.mutex.RLock()
-	_, err := db.file.ReadAt(buffer, offset)
-	db.mutex.RUnlock()
-	if err != nil {
-		return err
+	defer db.mutex.RUnlock()
+	idx := slices.IndexFunc(db.records, func(record Record) bool { return record.Id == id })
+	if idx != -1 {
+		record := db.records[idx]
+		buffer := make([]byte, record.Length)
+		_, err := db.file.ReadAt(buffer, record.Offset)
+		if err != nil {
+			return err
+		}
+		err = utils.FromBytes(buffer, output)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	err = utils.FromBytes(buffer, output)
-	if err != nil {
-		return err
-	}
-	return nil
+	return errors.New("record not found")
 }
 
 func Db(filePath string) (*Database, error) {
@@ -120,11 +131,15 @@ type User struct {
 func UsersDatabase() {
 	db, _ := Db("users.db")
 	defer db.Close()
-	record1, _ := db.Write(0, &User{"Jan", "Kowalski", true})
-	db.Write(record1.Offset+record1.Length, &User{"Jan2", "Kowalski2", true})
+
+	r1, _ := db.Insert(&User{"Jan", "Kowalski", true})
+	r2, _ := db.Insert(&User{"Jan", "Kowalski", false})
+	fmt.Println(r1, r2)
+
 	var user User
-	db.Read(db.records[1].Offset, db.records[1].Length, &user)
+	db.GetById(1, &user)
 	fmt.Println(&user)
-	db.Read(db.records[0].Offset, db.records[0].Length, &user)
-	fmt.Println(&user)
+	var user2 User
+	db.GetById(2, &user2)
+	fmt.Println(&user2)
 }
