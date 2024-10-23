@@ -46,7 +46,7 @@ func (db *Database) Read(offset int64, size int, output interface{}) error {
 	return nil
 }
 
-func newDatabase(filePath string) (*Database, error) {
+func Db(filePath string) (*Database, error) {
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ type User struct {
 }
 
 func UsersDatabase() {
-	db, _ := newDatabase("users.db")
+	db, _ := Db("users.db")
 	defer db.Close()
 	length, _ := db.Write(0, &User{1, "Jan", "Kowalski", true})
 	var user User
