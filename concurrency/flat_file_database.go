@@ -8,31 +8,10 @@ Pomyśl o optymalnym sposobie usuwania rekordów i ponownym wykorzystaniem miejs
 package concurrency
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"os"
+	"training.pl/examples/utils"
 )
-
-func toBytes(input interface{}) ([]byte, error) {
-	var buffer bytes.Buffer
-	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(input)
-	if err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
-}
-
-func fromBytes(data []byte, output interface{}) error {
-	buffer := bytes.NewBuffer(data)
-	decoder := gob.NewDecoder(buffer)
-	err := decoder.Decode(output)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 type Database struct {
 	file *os.File
@@ -42,45 +21,29 @@ func (db *Database) Close() error {
 	return db.file.Close()
 }
 
-func (db *Database) writeBytes(bytes []byte, offset int64) (int, error) {
-	length, err := db.file.WriteAt(bytes, offset)
+func (db *Database) Write(offset int64, input interface{}) (int, error) {
+	buffer, err := utils.ToBytes(input)
+	if err != nil {
+		return 0, err
+	}
+	length, err := db.file.WriteAt(buffer, offset)
 	if err != nil {
 		return 0, err
 	}
 	return length, nil
 }
 
-func (db *Database) readBytes(offset int64, size int) ([]byte, error) {
+func (db *Database) Read(offset int64, size int, output interface{}) error {
 	buffer := make([]byte, size)
 	_, err := db.file.ReadAt(buffer, offset)
 	if err != nil {
-		return nil, err
-	}
-	return buffer, nil
-}
-
-func (db *Database) Read(offset int64, size int, output interface{}) error {
-	buffer, err := db.readBytes(offset, size)
-	if err != nil {
 		return err
 	}
-	err = fromBytes(buffer, output)
+	err = utils.FromBytes(buffer, output)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (db *Database) Write(offset int64, input interface{}) (int, error) {
-	buffer, err := toBytes(input)
-	if err != nil {
-		return 0, err
-	}
-	var length, erro = db.writeBytes(buffer, offset)
-	if erro != nil {
-		return 0, erro
-	}
-	return length, nil
 }
 
 func newDatabase(filePath string) (*Database, error) {
