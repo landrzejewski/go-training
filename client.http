@@ -1,4 +1,4 @@
-POST localhost:8080/users
+POST http://localhost:8080/users
 Accept: application/json
 Content-Type: application/json
 
@@ -10,6 +10,6 @@ Content-Type: application/json
 
 ###
 
-GET localhost:8080/users/1
+GET http://localhost:8080/users/1
 Accept: application/json
 Content-Type: application/json
