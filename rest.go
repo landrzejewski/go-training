@@ -2,14 +2,11 @@ package main
 
 import (
 	"database/sql"
-	"strconv"
-
-	_ "github.com/lib/pq"
-
 	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
+	"net/http"
+	"strconv"
 )
 
 type User struct {
