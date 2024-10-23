@@ -31,8 +31,10 @@ func (g *Sequence) next() any {
 type Record struct {
 	Id     any
 	Offset int64
-	Length int
+	Length int64
 }
+
+const stateFileExtension = ".state"
 
 type Database struct {
 	file        *os.File
@@ -42,6 +44,19 @@ type Database struct {
 }
 
 func (db *Database) Close() error {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	buffer, err := utils.ToBytes(db.records)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(db.file.Name()+stateFileExtension, buffer, 0666)
+	if err != nil {
+		return err
+	}
+
 	return db.file.Close()
 }
 
@@ -56,12 +71,12 @@ func (db *Database) Write(offset int64, input interface{}) (*Record, error) {
 	if err != nil {
 		return nil, err
 	}
-	record := Record{db.idGenerator.next(), offset, length}
+	record := Record{db.idGenerator.next(), offset, int64(length)}
 	db.records = append(db.records, record)
 	return &record, nil
 }
 
-func (db *Database) Read(offset int64, size int, output interface{}) error {
+func (db *Database) Read(offset int64, size int64, output interface{}) error {
 	buffer := make([]byte, size)
 	db.mutex.RLock()
 	_, err := db.file.ReadAt(buffer, offset)
@@ -81,7 +96,18 @@ func Db(filePath string) (*Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	db := &Database{file, sync.RWMutex{}, make([]Record, 0), &Sequence{0}}
+
+	buffer, err := os.ReadFile(filePath + stateFileExtension)
+	var records []Record
+	if err != nil {
+		records = make([]Record, 0)
+	} else {
+		err = utils.FromBytes(buffer, &records)
+		if err != nil {
+			return nil, err
+		}
+	}
+	db := &Database{file, sync.RWMutex{}, records, &Sequence{0}}
 	return db, nil
 }
 
@@ -94,8 +120,11 @@ type User struct {
 func UsersDatabase() {
 	db, _ := Db("users.db")
 	defer db.Close()
-	record, _ := db.Write(0, &User{"Jan", "Kowalski", true})
+	record1, _ := db.Write(0, &User{"Jan", "Kowalski", true})
+	db.Write(record1.Offset+record1.Length, &User{"Jan2", "Kowalski2", true})
 	var user User
-	db.Read(record.Offset, record.Length, &user)
-	fmt.Println(record.Id, &user)
+	db.Read(db.records[1].Offset, db.records[1].Length, &user)
+	fmt.Println(&user)
+	db.Read(db.records[0].Offset, db.records[0].Length, &user)
+	fmt.Println(&user)
 }
