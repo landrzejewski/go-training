@@ -33,6 +33,13 @@ func fromBytes(data []byte, output interface{}) error {
 	return nil
 }
 
+type User struct {
+	Id        int
+	FirstName string
+	LastName  string
+	IsActive  bool
+}
+
 func UsersDatabase() {
 	textBytes, _ := toBytes("Ala ma kota")
 	var text string
@@ -43,4 +50,9 @@ func UsersDatabase() {
 	var value int
 	fromBytes(valueBytes, &value)
 	fmt.Println(value)
+
+	userBytes, _ := toBytes(&User{1, "Jan", "Kowalski", true})
+	var user User
+	fromBytes(userBytes, &user)
+	fmt.Println(&user)
 }
