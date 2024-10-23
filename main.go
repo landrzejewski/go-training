@@ -76,7 +76,7 @@ func server() {
 			fmt.Println("Error accepting connection:", err.Error())
 			os.Exit(1)
 		}
-		fmt.Println("Client connected:", connection.RemoteAddr())
+		fmt.Println("Client connected:", connection.LocalAddr())
 		mutex.Lock()
 		connections = append(connections, connection)
 		mutex.Unlock()
