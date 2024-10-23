@@ -10,32 +10,62 @@ package concurrency
 import (
 	"fmt"
 	"os"
+	"sync"
+	"sync/atomic"
 	"training.pl/examples/utils"
 )
 
+type IdGenerator interface {
+	next() any
+}
+
+type Sequence struct {
+	counter int64
+}
+
+func (g *Sequence) next() any {
+	counter := atomic.AddInt64(&g.counter, 1)
+	return counter
+}
+
+type Record struct {
+	Id     any
+	Offset int64
+	Length int
+}
+
 type Database struct {
-	file *os.File
+	file        *os.File
+	mutex       sync.RWMutex
+	records     []Record
+	idGenerator IdGenerator
 }
 
 func (db *Database) Close() error {
 	return db.file.Close()
 }
 
-func (db *Database) Write(offset int64, input interface{}) (int, error) {
+func (db *Database) Write(offset int64, input interface{}) (*Record, error) {
 	buffer, err := utils.ToBytes(input)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
 	length, err := db.file.WriteAt(buffer, offset)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return length, nil
+	record := Record{db.idGenerator.next(), offset, length}
+	db.records = append(db.records, record)
+	return &record, nil
 }
 
 func (db *Database) Read(offset int64, size int, output interface{}) error {
 	buffer := make([]byte, size)
+	db.mutex.RLock()
 	_, err := db.file.ReadAt(buffer, offset)
+	db.mutex.RUnlock()
 	if err != nil {
 		return err
 	}
@@ -51,12 +81,11 @@ func Db(filePath string) (*Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	db := &Database{file}
+	db := &Database{file, sync.RWMutex{}, make([]Record, 0), &Sequence{0}}
 	return db, nil
 }
 
 type User struct {
-	Id        int
 	FirstName string
 	LastName  string
 	IsActive  bool
@@ -65,8 +94,8 @@ type User struct {
 func UsersDatabase() {
 	db, _ := Db("users.db")
 	defer db.Close()
-	length, _ := db.Write(0, &User{1, "Jan", "Kowalski", true})
+	record, _ := db.Write(0, &User{"Jan", "Kowalski", true})
 	var user User
-	db.Read(0, length, &user)
-	fmt.Println(&user)
+	db.Read(record.Offset, record.Length, &user)
+	fmt.Println(record.Id, &user)
 }
