@@ -11,7 +11,7 @@ import (
 const serverAddress = "localhost:9000"
 
 func main() {
-	client()
+	server()
 }
 
 func client() {
@@ -60,7 +60,6 @@ func server() {
 			message := <-broadcast
 			mutex.Lock()
 			for _, connection := range connections {
-				fmt.Println("New message")
 				_, err := fmt.Fprintf(connection, "%s", message)
 				if err != nil {
 					fmt.Println("Error sending:", err)
