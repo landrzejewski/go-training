@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+
+	exercises "training.pl/go/examples"
 	// "training.pl/go/common"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
@@ -12,10 +14,12 @@ import (
 )
 
 func main() {
-	defer close()
-	defer func() {
-		fmt.Println("Other close")
-	}()
+	exercises.MonetaryAmountExercise()
+
+	// defer close()
+	// defer func() {
+	// 	fmt.Println("Other close")
+	// }()
 
 	// pointers()
 
@@ -29,8 +33,6 @@ func main() {
 	// if err != nil {
 	// 	fmt.Printf("Error")
 	// }
-
-	errorHandling()
 }
 
 const CurrentYear = 5
