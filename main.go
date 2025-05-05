@@ -2,9 +2,9 @@ package main
 
 import (
 	"cmp"
+	"errors"
 	"fmt"
 	"slices"
-
 	// "training.pl/go/common"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
@@ -30,7 +30,7 @@ func main() {
 	// 	fmt.Printf("Error")
 	// }
 
-	structs()
+	errorHandling()
 }
 
 const CurrentYear = 5
@@ -497,8 +497,15 @@ func structs() {
 	otherUser := &user // wskaźnik na oryginał
 	fmt.Println(*otherUser)
 
+	//(*otherUser).lastName = "test"
+	//otherUser.lastName = "test"
+
 	user.lastName = "Nowak"
 	user.show()
+	
+	// process(&user)
+	// process(&myPath)
+	// process("text")
 
 	admin := createPerson("Anna", "Nowak", 20)
 	admin.show()
@@ -515,11 +522,13 @@ func structs() {
 	myRect := rect{10.0, 10.0}
 	showShape(&myRect)
 
-	//address := address{"Dobra", 38}
-	//address.show()
+	address := address{"Dobra", 38}
+	address.show()
+
+
 	myClient := client{
 		"Jan Kowalski",
-		address{"Dobra", 38},
+		address,
 	}
 	myClient.show()
 	myClient.address.show()
@@ -527,6 +536,7 @@ func structs() {
 
 // alias typu
 type text = string
+type temperature = float64
 
 // utworzenie nowego typu na bazie istniejącego
 type path string
@@ -535,10 +545,13 @@ func (p *path) show() {
 	fmt.Println(*p)
 }
 
+type systemPath path 
+
 type person struct {
 	firstName string
 	lastName  string
 	age       int
+	// cvPath    path
 }
 
 // działanie na wskaźniku pozwala na uniknąć tworzenia kopii struktury
@@ -554,9 +567,24 @@ type display interface {
 	show()
 }
 
+type serializable interface {
+	toJson(bool)
+}
+
+func (p *person) toJson(pretty bool) {
+
+}
+
+func process(object display) {
+	object.show()
+}
+
+func save(object serializable) {	
+}
+
 type shape interface {
 	area() float64
-	// show()
+	 // show()
 	display
 }
 
@@ -576,13 +604,14 @@ func showShape(shape shape) {
 	shape.show()
 }
 
-// type nesting
-/*type client struct {
-	name string
-	address address
-}*/
 
-// struct embedding
+// type nesting
+// type client struct {
+// 	name string
+// 	address address
+// }
+
+// // struct embedding
 type client struct {
 	name string
 	address
@@ -603,4 +632,48 @@ func (a *address) show() {
 
 func close() {
 	fmt.Println("close()")
+}
+
+func errorHandling() {
+	result, err := safeDiv(10, 2)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(result)
+
+	if _, err := readText("/Users/file.txtx"); err != nil {
+		if errors.Is(err, fileNotFound) {
+			fmt.Println("File not found")
+		}
+	}
+
+	// panic("Fatal error") // błąd krytyczny, przerwanie działania programu
+}
+
+func safeDiv(value, divident float64) (float64, error) {
+	if divident == 0 {
+		return 0.0, errors.New("Division by zero")
+	}
+	return value / divident, nil
+}
+
+var fileNotFound = fmt.Errorf("file not found")
+var readError = fmt.Errorf("read error")
+
+func readText(path string) (string, error) {
+	if path == "" {
+		return "", readError
+	}
+	// ... read
+	return "lines", nil
+}
+
+type appError struct {
+	code         int
+	descriptions string
+}
+
+func (e *appError) Error() string {
+	return e.descriptions
 }
