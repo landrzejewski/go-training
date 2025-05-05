@@ -23,12 +23,14 @@ func main() {
 	// Add(1, 3)
 	// c.Add(1, 3)
 
-	fmt.Println("Input value:")
-	var input string
-	_, err := fmt.Scanln(&input)
-	if err != nil {
-		fmt.Printf("Error")
-	}
+	// fmt.Println("Input value:")
+	// var input string
+	// _, err := fmt.Scanln(&input)
+	// if err != nil {
+	// 	fmt.Printf("Error")
+	// }
+
+	structs()
 }
 
 const CurrentYear = 5
