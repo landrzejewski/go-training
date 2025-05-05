@@ -630,10 +630,6 @@ func (a *address) show() {
 	fmt.Println("Address:", a.street, a.houseNumber)
 }
 
-func close() {
-	fmt.Println("close()")
-}
-
 func errorHandling() {
 	result, err := safeDiv(10, 2)
 	if err != nil {
@@ -642,12 +638,15 @@ func errorHandling() {
 	}
 	fmt.Println(result)
 
-	if _, err := readText("/Users/file.txtx"); err != nil {
+	if text, err := readText("/Users/file.txtx"); err != nil {
 		if errors.Is(err, fileNotFound) {
 			fmt.Println("File not found")
+			return
 		}
+	} else {
+		fmt.Println(text)
 	}
-
+	
 	// panic("Fatal error") // błąd krytyczny, przerwanie działania programu
 }
 
@@ -676,4 +675,16 @@ type appError struct {
 
 func (e *appError) Error() string {
 	return e.descriptions
+}
+
+func close() {
+	fmt.Println("close()")
+}
+
+
+type TaskError struct {
+}
+
+func (t *TaskError) Error() string {
+	return "Task error"
 }
