@@ -4,11 +4,31 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
+
+	// "training.pl/go/common"
+	// . "training.pl/go/common" // import bez prefiksu/namespace
+	// c "training.pl/go/common" // import z aliasowaniem
+	// _ "training.pl/go/common" // ignorowanie błędu kompilacji (przydatne kiedy chcemy załadować moduł, który np. wykonuje jakiś kod)
 )
 
 func main() {
-	// fmt.Println("Hello World")
-	pointers()
+	defer close()
+	defer func() {
+		fmt.Println("Other close")
+	}()
+
+	// pointers()
+
+	// common.Add(1, 3)
+	// Add(1, 3)
+	// c.Add(1, 3)
+
+	fmt.Println("Input value:")
+	var input string
+	_, err := fmt.Scanln(&input)
+	if err != nil {
+		fmt.Printf("Error")
+	}
 }
 
 const CurrentYear = 5
@@ -420,7 +440,8 @@ func pointers() {
 
 	// Dla tablic
 	var arr = [...]int{1, 2, 3}
-	//var otherArr = arr // kopia wartości
+	// var otherArr = arr // kopia wartości
+
 	var otherArrPointer = &arr // adres/wskazanie na adres oryginalnej tablicy w pamięci
 	otherArrPointer[0] = 0     // (*otherArrPointer)[0] = 0
 
@@ -440,6 +461,16 @@ func pointers() {
 	// Both maps now reflect the change
 	fmt.Println("Original map:", originalMap)
 	fmt.Println("Copied map:", copiedMap)
+
+	var age = 10
+	var agePointer = &age
+	// var abc = &agePointer
+	fmt.Println("Age:", age)
+	fmt.Println("Age:", *agePointer)
+	var doubleResult = doubleWithPointer(agePointer)
+	fmt.Println("Result:", doubleResult)
+	fmt.Println("Age:", age)
+	fmt.Println("Age:", *agePointer)
 }
 
 func double(value int) int {
@@ -450,4 +481,124 @@ func double(value int) int {
 func doubleWithPointer(valuePointer *int) int {
 	*valuePointer += 1
 	return *valuePointer * 2
+}
+
+func structs() {
+	var myPath path = "/Users/Jan"
+	myPath.show()
+
+	fmt.Println(person{"Jan", "Kowalski", 40})                  // bez podawania kluczy, kolejność ma znacznie
+	fmt.Println(person{lastName: "Kowalski", firstName: "Jan"}) // z podawaniem kluczy, kolejność nie ma znacznia, można nie podawać wszytskich elementów
+
+	user := person{"Jan", "Kowalski", 40}
+	// otherUser := user // utworzenie kopii
+	otherUser := &user // wskaźnik na oryginał
+	fmt.Println(*otherUser)
+
+	user.lastName = "Nowak"
+	user.show()
+
+	admin := createPerson("Anna", "Nowak", 20)
+	admin.show()
+
+	account := struct {
+		number  string
+		balance float64
+	}{
+		"0000001",
+		0.0,
+	}
+	fmt.Println(account)
+
+	myRect := rect{10.0, 10.0}
+	showShape(&myRect)
+
+	//address := address{"Dobra", 38}
+	//address.show()
+	myClient := client{
+		"Jan Kowalski",
+		address{"Dobra", 38},
+	}
+	myClient.show()
+	myClient.address.show()
+}
+
+// alias typu
+type text = string
+
+// utworzenie nowego typu na bazie istniejącego
+type path string
+
+func (p *path) show() {
+	fmt.Println(*p)
+}
+
+type person struct {
+	firstName string
+	lastName  string
+	age       int
+}
+
+// działanie na wskaźniku pozwala na uniknąć tworzenia kopii struktury
+func (p *person) show() {
+	fmt.Println(*p)
+}
+
+func createPerson(fistName, lastName string, age int) *person {
+	return &person{fistName, lastName, age}
+}
+
+type display interface {
+	show()
+}
+
+type shape interface {
+	area() float64
+	// show()
+	display
+}
+
+type rect struct {
+	width, height float64
+}
+
+func (r *rect) area() float64 {
+	return r.width * r.height
+}
+
+func (r *rect) show() {
+	fmt.Println("rect", r.width, r.height)
+}
+
+func showShape(shape shape) {
+	shape.show()
+}
+
+// type nesting
+/*type client struct {
+	name string
+	address address
+}*/
+
+// struct embedding
+type client struct {
+	name string
+	address
+}
+
+type address struct {
+	street      string
+	houseNumber int
+}
+
+func (c *client) show() {
+	fmt.Println("Client:", c.name)
+}
+
+func (a *address) show() {
+	fmt.Println("Address:", a.street, a.houseNumber)
+}
+
+func close() {
+	fmt.Println("close()")
 }
