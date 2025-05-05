@@ -4,7 +4,7 @@ import "fmt"
 
 func main() {
 	// fmt.Println("Hello World")
-	controlFlow()
+	functions()
 }
 
 const CurrentYear = 5
@@ -191,4 +191,92 @@ func controlFlow() {
 		fmt.Println("GO")
 		break
 	}
+}
+
+func functions() {
+	fmt.Printf("Sum: 2 + 3 = %v\n", add(2, 3))
+
+	divResult, errorMessage := div(10, 2)
+	fmt.Println(divResult, errorMessage)
+
+	sumAll(1, 2, 3, 4)
+	values := []int{1, 2, 3, 4}
+	sumAll(values...)
+
+	forEach(values, func(value, _ int) {
+		fmt.Println(value)
+	})
+
+	forEach(values, showElement)
+
+	var firstGenerator = idGeneratorFactory()
+	fmt.Println(firstGenerator())
+	fmt.Println(firstGenerator())
+
+	var secondGenerator = idGeneratorFactory()
+	fmt.Println(secondGenerator())
+
+	fmt.Println(firstGenerator())
+}
+
+/*
+func add(value int, otherValue int) int {
+	return value + otherValue
+}
+*/
+
+func add(value, otherValue int) (sum int) { // ten sam typ dla parametrów wejściowych i nazwany typ zwracany
+	sum = value + otherValue
+	return // naked return, zwraca zadeklarowany rezultat - sum
+}
+
+func div(value float64, divident float64) (float64, string) { // zwracanie kilku rezultatów z funkcji
+	if divident == 0 {
+		return 0.0, "Division by zero"
+	}
+	return value / divident, ""
+}
+
+// rekurencja
+func factorial(n int) int {
+	if n == 0 {
+		return 1
+	}
+	return n * factorial(n-1)
+}
+
+func forEach(numbers []int, task func(int, int)) {
+	for idx, number := range numbers {
+		task(number, idx)
+	}
+}
+
+func showElement(value, idx int) {
+	fmt.Printf("Value: %v (idx:%v)\n", value, idx)
+}
+
+func sumAll(values ...int) (sum int) {
+	for _, value := range values {
+		sum += value
+	}
+	return
+}
+
+func idGeneratorFactory() func() int {
+	lastId := 0
+	return func() int {
+		lastId++
+		return lastId
+	}
+}
+
+func fahrenheitToCelsius() (clesius float64) {
+	var fahrenheit float64
+	fmt.Println("Enter fahrenheit: ")
+	_, err := fmt.Scan(&fahrenheit)
+	if err != nil {
+		panic("Invalid input")
+	}
+	clesius = (fahrenheit - 32) * 5 / 9
+	return
 }
