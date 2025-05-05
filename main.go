@@ -1,10 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"cmp"
+	"fmt"
+	"slices"
+)
 
 func main() {
 	// fmt.Println("Hello World")
-	functions()
+	collections()
 }
 
 const CurrentYear = 5
@@ -196,12 +200,12 @@ func controlFlow() {
 func functions() {
 	fmt.Printf("Sum: 2 + 3 = %v\n", add(2, 3))
 
-	divResult, errorMessage := div(10, 2)
+	divResult, errorMessage := div(10, 0)
 	fmt.Println(divResult, errorMessage)
 
-	sumAll(1, 2, 3, 4)
+	sumAll(1, 2, 3, 4, 5)
 	values := []int{1, 2, 3, 4}
-	sumAll(values...)
+	sumAll(values...) // spread
 
 	forEach(values, func(value, _ int) {
 		fmt.Println(value)
@@ -255,7 +259,7 @@ func showElement(value, idx int) {
 	fmt.Printf("Value: %v (idx:%v)\n", value, idx)
 }
 
-func sumAll(values ...int) (sum int) {
+func sumAll(values ...int) (sum int) { // varargs - zmienna liczba argumentów
 	for _, value := range values {
 		sum += value
 	}
@@ -279,4 +283,119 @@ func fahrenheitToCelsius() (clesius float64) {
 	}
 	clesius = (fahrenheit - 32) * 5 / 9
 	return
+}
+
+func collections() {
+	// Tablice (Arrays)
+	// nazwaZmiennej := [length/...]typDanych{values}, indeksy liczone od 0 do n - 1
+
+	numbers := [...]int{1, 2, 3, 4}
+	fmt.Println(numbers)
+    // numbers[10] = 10 // błąd kompilacji, indeks poza zakresem
+	fmt.Printf("3rd element: %d\n", numbers[2])
+	numbers[0] = 0
+	fmt.Println("Numbers length:", len(numbers))
+
+	var values = [100]int{1, 10: 3, 99: 100}
+	fmt.Println(values)
+
+	dimensions := [3][3]int{
+		{1, 2, 3},
+		{3, 4, 5},
+		{3, 4, 5},
+	}
+	fmt.Println(dimensions)
+	fmt.Println(dimensions[0][0])
+
+	// Slices
+	// zmienna := []typDanych{values}
+
+	numbersSlice := []int{1, 2, 3}
+	
+	fmt.Println(numbersSlice)
+	fmt.Printf("3rd element: %d\n", numbersSlice[2])
+	fmt.Printf("Numbers slice length: %d\n", len(numbersSlice))
+	fmt.Printf("Numbers slice capacity (internal array length): %d\n", cap(numbersSlice))
+
+	messages := [5]string{"1", "2", "3", "4", "5"}
+	messagesSlice := messages[0:3]
+	messagesSlice[0] = "0"
+	fmt.Println(messagesSlice)
+	fmt.Println(messages)
+	fmt.Printf("Messages slice length: %d\n", len(messagesSlice))
+	fmt.Printf("Messages slice capacity (internal array length): %d\n", cap(messagesSlice))
+
+	otherMessagesSlice := make([]string, 3, 300)
+	fmt.Println(otherMessagesSlice)
+	fmt.Printf("Messages slice length: %d\n", len(otherMessagesSlice))
+	fmt.Printf("Messages slice capacity (internal array length): %d\n", cap(otherMessagesSlice))
+	otherMessagesSlice[2] = "Hello"
+	fmt.Printf("3rd element: %v\n", otherMessagesSlice[2])
+
+	fmt.Println(otherMessagesSlice)
+	// otherMessagesSlice[6] = "Hi" //error - index out of bounds (na poziomie wykonania)
+
+	otherMessagesSlice = append(otherMessagesSlice, "a", "b", "c", "d")
+	fmt.Println(otherMessagesSlice)
+	otherMessagesSlice[6] = "Hi"
+	fmt.Println(otherMessagesSlice)
+
+	// łączenie slices
+	// newSlice = append(slice1, slice2, ...)
+	// kopiowanie slices
+	// copy(destSlice, srcSlice)
+	// porównywanie slices
+	// slices.Equal(slice1, slice2)
+	// sortowanie
+	// slices.Sort(slice)
+	// sortowanie z użyciem funkcji
+
+	
+	fruits := []string{"peach", "banana", "kiwi"}
+
+	lenCmp := func(a, b string) int {
+		return cmp.Compare(len(a), len(b))
+	}
+		
+	slices.SortFunc(fruits, lenCmp)
+	slices.SortFunc(fruits, fruitComparator)
+	fmt.Println(fruits)
+	
+
+	customSlice := otherMessagesSlice[2:5]
+	fmt.Println(customSlice)
+
+	// Maps
+	// zmienna := map[typKlucza]typWartości{key:value,...}
+	// make(map[typKlucza]typWartości)
+
+	var ratings = make(map[string]float64)
+	ratings["a"] = 50.0
+	ratings["b"] = 10.0
+	fmt.Println(ratings)
+	fmt.Printf("Value for key: a is equal %.0f\n", ratings["a"])
+	fmt.Printf("Value for key: c is equal %.0f\n", ratings["c"]) // dla nieistniejącego klucza zwraca wartość domyślną np. 0 dla float64
+
+	value, exists := ratings["a"]
+	if exists {
+		println(value)
+	}
+
+	// delete(ratings, "b") // usunięcie wpisu pod kluczem
+	// clear(ratings) // wyczyszczenie całej mapy
+	// fmt.Println(ratings)
+
+	// porównywanie maps
+	// maps.Equal(map1, map2)
+
+	var newRatings = ratings
+	newRatings["a"] = 99.0
+
+	for key, value := range ratings {
+		fmt.Printf("%v: %f\n", key, value)
+	}
+}
+
+func fruitComparator(a, b string) int {
+	return cmp.Compare(len(a), len(b))
 }
