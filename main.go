@@ -33,6 +33,10 @@ func main() {
 	// if err != nil {
 	// 	fmt.Printf("Error")
 	// }
+
+	// var x int
+	// var y int
+	// _, err := fmt.Scanln(&x, &y)
 }
 
 const CurrentYear = 5
