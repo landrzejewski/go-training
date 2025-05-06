@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	examples.Find()
+	examples.Grep()
 
 	// budget := &budget.Budget{}
 	// budget = budget.Load()
