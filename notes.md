@@ -21,5 +21,5 @@
      zezwala na opcjonalne numerowanie wierszy (przełącznik -n),
      numerowanie wierszy można wyłączyć dla pustych wierszy (przełącznik -nb)
    - find - przeszukuje i drukuje ścieżki plików i/lub katalogów, których nazwy pasują do wskazanego wzorca i typu,
-     dozwolone typy to plik, katalog lub link symboliczny
+     dozwolone typy to plik, katalog lub link symboliczny ("path/filepath" => filepath.Walk)
    - grep - wyszukuje i drukuje wiersze zawierające wskazany tekst/wzorzec ze wskazanych plików/ścieżek

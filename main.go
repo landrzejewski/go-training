@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-
-	"training.pl/go/examples"
 	// "training.pl/go/common"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
@@ -14,13 +12,25 @@ import (
 )
 
 func main() {
-	examples.Cat()
-
 	// budget := &budget.Budget{}
 	// budget = budget.Load()
 	// budget.EntryFromArgs()
 	// budget.Save()
 	// budget.Print()
+
+	// var stack = &common.Stack[int]{}
+	// stack.Push(1)
+	// stack.Push(2)
+	// fmt.Println(stack.Pop())
+	// fmt.Println(stack.Pop())
+	// fmt.Println(stack.Pop())
+
+	// var stack = &common.Stack[bool]{}
+	// stack.Push(true)
+	// stack.Push(false)
+	// fmt.Println(stack.Pop())
+	// fmt.Println(stack.Pop())
+	// fmt.Println(stack.Pop())
 
 	// var stack = common.NewStack()
 	// stack.Push(1)
