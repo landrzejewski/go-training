@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	"training.pl/go/examples"
+	"training.pl/go/examples/db"
 	// "training.pl/go/common"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	examples.Grep()
+	db.DatabaseExample()
 
 	// budget := &budget.Budget{}
 	// budget = budget.Load()
