@@ -78,7 +78,7 @@ func isBoardFull() bool {
 	return true
 }
 
-func TicTacToeExercise() {
+func TicTacToe() {
 	var row, col int
 	for {
 		fmt.Printf("Player %s, enter move (column, row): ", currentPlayer)

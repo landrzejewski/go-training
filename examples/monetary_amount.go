@@ -57,7 +57,7 @@ func apply(monetaryAmount, otherMonetaryAmount *monetaryAmount, operator func(mo
 	return &ma, nil
 }*/
 
-func MonetaryAmountExercise() {
+func MonetaryAmount() {
 	amount := newMonetaryAmount(100.0, "PLN")
 	otherAmount := newMonetaryAmount(100.0, "PLN")
 	if amount.add(otherAmount) != nil {
