@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 
+	"training.pl/go/common"
 	// "training.pl/go/common"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
@@ -13,7 +14,13 @@ import (
 )
 
 func main() {
-	enums()
+	var stack = common.NewStack()
+	stack.Push(1)
+	stack.Push(2)
+	fmt.Println(stack.Pop())
+	fmt.Println(stack.Pop())
+	fmt.Println(stack.Pop())
+
 	// defer close()
 	// defer func() {
 	// 	fmt.Println("Other close")
