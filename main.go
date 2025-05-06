@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 
-	exercises "training.pl/go/examples"
 	// "training.pl/go/common"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
@@ -14,8 +13,7 @@ import (
 )
 
 func main() {
-	exercises.MonetaryAmountExercise()
-
+	enums()
 	// defer close()
 	// defer func() {
 	// 	fmt.Println("Other close")
@@ -693,4 +691,33 @@ type TaskError struct {
 
 func (t *TaskError) Error() string {
 	return "Task error"
+}
+
+func enums() {
+	// var status responseStatus = ok
+	var status = request()
+	switch status {
+	case ok, noContent:
+		fmt.Println("Success")
+	case notFound: 
+		fmt.Printf("Failure: %v", statusName[status])
+	}
+}
+
+type responseStatus = int
+
+const (
+	ok = iota
+	noContent
+	notFound
+)
+
+var statusName = map[responseStatus]string{
+	ok: "Ok",
+	noContent: "No content",
+	notFound: "Not found",
+}
+
+func request() responseStatus {
+	return ok
 }
