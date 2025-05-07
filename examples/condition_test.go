@@ -11,34 +11,27 @@ func TestIsEven(t *testing.T) {
 	}
 }
 
-type testInput struct {
-	name string
-	value int
-	expected bool
-}
-
-func TestIsEvenParametrized(t *testing.T) { 
-	/*var parameters = []struct {
-		name string
-		value int
+func TestIsEvenParametrized(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    int
 		expected bool
-	} {
-		{ "Should be even", 4, true },
-		{ "Should be not even", 9, false },
-	}*/
-	var parameters = []testInput {
-		{ "4 should be even", 4, true },
-		{ "9 should be not even", 9, false },
+	}{
+		{"Even number", 2, true},
+		{"Odd number", 3, false},
+		{"Zero", 0, true},
+		{"Negative even number", -4, true},
+		{"Negative odd number", -5, false},
 	}
-	for _, entry := range parameters {
-		t.Run(entry.name, func(t *testing.T) {
-			result := IsEven(entry.value)
-			if !result {
-				t.Errorf("%v but result is %v", entry.name, result)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsEven(tt.input)
+			if result != tt.expected {
+				t.Errorf("IsEven(%d) = %v; want %v", tt.input, result, tt.expected)
 			}
 		})
 	}
-
 }
 
 // go test training.pl/go/examples --test.Short()
