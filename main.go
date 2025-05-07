@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	concurrency.Run()
+	concurrency.FindFiles()
 
 	// db.DatabaseExample()
 
