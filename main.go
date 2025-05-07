@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	"training.pl/go/examples/db"
+	"training.pl/go/examples/chat"
 	// "training.pl/go/common"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
@@ -14,7 +14,8 @@ import (
 )
 
 func main() {
-	db.DatabaseExample()
+	// chat.Server("localhost:8000")
+	chat.Client("localhost:8000")
 
 	// budget := &budget.Budget{}
 	// budget = budget.Load()

@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"slices"
+
+	"training.pl/go/common"
 )
 
 // const metadataFileSuffix = ".metadata"
@@ -33,7 +35,7 @@ import (
 // }
 
 // func (d *Database) saveState() {
-// 	byte, err := ToBytes(d.records)
+// 	byte, err := common.ToBytes(d.records)
 // 	if err != nil {
 // 		panic("Error marshaling records state")
 // 	}
@@ -73,7 +75,7 @@ import (
 // 	if err != nil {
 // 		records = make([]Record, 0)
 // 	} else {
-// 		err = FromBytes(byte, &records)
+// 		err = common.FromBytes(byte, &records)
 // 		if err != nil {
 // 			panic("Invalid metadata file")
 // 		}
@@ -87,7 +89,7 @@ import (
 // }
 
 // func (d *Database) Insert(input interface{}) (*Record, error) {
-// 	bytes, err := ToBytes(input)
+// 	bytes, err := common.ToBytes(input)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -120,7 +122,7 @@ import (
 // 	if err != nil {
 // 		return err
 // 	}
-// 	err = FromBytes(bytes, output)
+// 	err = common.FromBytes(bytes, output)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -146,7 +148,7 @@ import (
 // 	if index == -1 {
 // 		return errors.New("Record not found")
 // 	}
-// 	bytes, err := ToBytes(input)
+// 	bytes, err := common.ToBytes(input)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -226,7 +228,7 @@ func Db(filepath string) (*Database, error) {
 	if err != nil {
 		records = make([]Record, 0)
 	} else {
-		err = FromBytes(byte, &records)
+		err = common.FromBytes(byte, &records)
 		if err != nil {
 			panic("Invalid metadata file")
 		}
@@ -266,7 +268,7 @@ func (d *Database) Close() {
 }
 
 func (d *Database) saveState() {
-	bytes, err := ToBytes(d.records)
+	bytes, err := common.ToBytes(d.records)
 	if err != nil {
 		panic("Error marshaling records state")
 	}
@@ -291,7 +293,7 @@ func (d *Database) findRecordIndex(id int64) int {
 }
 
 func (d *Database) insert(input interface{}) error {
-	bytes, err := ToBytes(input)
+	bytes, err := common.ToBytes(input)
 	if err != nil {
 		return err
 	}
@@ -320,7 +322,7 @@ func (d *Database) findById(id int64, output interface{}) error {
 	if err != nil {
 		return err
 	}
-	return FromBytes(bytes, output)
+	return common.FromBytes(bytes, output)
 }
 
 func (d *Database) deleteById(id int64) error {
@@ -338,7 +340,7 @@ func (d *Database) updateById(id int64, input interface{}) error {
 	if index == -1 {
 		return errors.New("Record not found")
 	}
-	bytes, err := ToBytes(input)
+	bytes, err := common.ToBytes(input)
 	if err != nil {
 		return err
 	}
