@@ -1,12 +1,9 @@
 package chat
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"sync"
-
-	"training.pl/go/common"
 )
 
 func Server(address string) {
@@ -22,8 +19,24 @@ func Server(address string) {
 	}()
 	
 	connections := make([]net.Conn, 0)
-	messages := make(chan *Message, 1000)
-	mutex := &sync.Mutex{}
+	messages := make(chan *message, 1000)
+	mutex := &sync.RWMutex{}
+
+	go func ()  {
+		for message := range messages {
+			mutex.RLock()
+			for _, connection := range connections {
+				if connection != message.sender {
+					_, err := connection.Write(message.bytes)
+					if err != nil {
+						log.Println("Error sending message")
+						continue
+					}
+				}
+			}
+			mutex.RUnlock()
+		}
+	}()
 
 	log.Println("Listening on: " + address)
 
@@ -43,7 +56,7 @@ func Server(address string) {
 	// close(messages)
 }
 
-func handleConnection(connection net.Conn, messages chan<- *Message) {
+func handleConnection(connection net.Conn, messages chan<- *message) {
 	defer func ()  {
 		err := connection.Close()
 		if err != nil {
@@ -57,10 +70,7 @@ func handleConnection(connection net.Conn, messages chan<- *Message) {
 			log.Println("Error reading message")
 			break
 		}
-		var text string
-		err = common.FromBytes(messageBytes, &text)
-		fmt.Println(text)
+		messages <- &message{connection, messageBytes}
 	}
-
 
 }

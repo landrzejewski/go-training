@@ -6,16 +6,19 @@ import (
 	"fmt"
 	"slices"
 
-	"training.pl/go/examples/chat"
-	// "training.pl/go/common"
+	"training.pl/go/examples"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
 	// _ "training.pl/go/common" // ignorowanie błędu kompilacji (przydatne kiedy chcemy załadować moduł, który np. wykonuje jakiś kod)
 )
 
 func main() {
+	examples.IsEven(4)
+
+	// examples.RestApi()
+
 	// chat.Server("localhost:8000")
-	chat.Client("localhost:8000")
+	// chat.Client("localhost:8000")
 
 	// budget := &budget.Budget{}
 	// budget = budget.Load()

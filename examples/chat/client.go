@@ -2,6 +2,7 @@ package chat
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -14,6 +15,8 @@ func Client(address string) {
 	if err != nil {
 		panic(err)
 	}
+
+	go listenForMessages(connection)
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -36,5 +39,19 @@ func Client(address string) {
 			log.Println("Error sending message")
 			continue
 		}
+	}
+}
+
+func listenForMessages(connection net.Conn) {
+	messageBytes := make([]byte, bufferSize)
+	for {
+		_, err := connection.Read(messageBytes)
+		if err != nil {
+			log.Println("Error reading message")
+			break
+		}
+		var text string
+		err = common.FromBytes(messageBytes, &text)
+		fmt.Println(text)
 	}
 }

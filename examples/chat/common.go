@@ -4,7 +4,7 @@ import "net"
 
 const bufferSize = 128
 
-type Message struct {
+type message struct {
 	sender net.Conn
 	bytes  []byte
 }

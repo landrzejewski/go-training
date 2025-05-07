@@ -1,0 +1,73 @@
+POST http://localhost:8080/users
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Nowak",
+  "email": "nowak@training.pl"
+}
+
+###
+
+GET http://localhost:8080/users
+Accept: application/json
+Content-Type: application/json
+
+###
+
+GET http://localhost:8080/users/4
+Accept: application/json
+Content-Type: application/json
+
+###
+
+PUT http://localhost:8080/users/4
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Nowakowski",
+  "email": "nowak@training.pl"
+}
+
+###
+
+DELETE http://localhost:8080/users/4
+Accept: application/json
+Content-Type: application/json
+
+###
+
+POST http://localhost:8080/users
+Accept: application/json
+Content-Type: application/json
+
+{
+  "firstName": "Jan",
+  "lastName": "Nowak",
+  "isActive": true
+}
+
+###
+
+GET http://localhost:8080/users/1
+Accept: application/json
+Content-Type: application/json
+
+###
+
+PUT http://localhost:8080/users/1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "firstName": "Marek",
+  "lastName": "Nowak",
+  "isActive": true
+}
+
+###
+
+DELETE http://localhost:8080/users/1
+Accept: application/json
+Content-Type: application/json
