@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"slices"
 
-	"training.pl/go/examples/db"
+	"training.pl/go/concurrency"
+	// "training.pl/go/examples/db"
 	// "training.pl/go/common"
 	// . "training.pl/go/common" // import bez prefiksu/namespace
 	// c "training.pl/go/common" // import z aliasowaniem
@@ -14,7 +15,9 @@ import (
 )
 
 func main() {
-	db.DatabaseExample()
+	concurrency.Run()
+
+	// db.DatabaseExample()
 
 	// budget := &budget.Budget{}
 	// budget = budget.Load()
