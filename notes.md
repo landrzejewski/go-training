@@ -44,3 +44,7 @@
 		- after the shop is closed and there are no clients left in the waiting area, the barber goes home
    The Sleeping Barber was originally proposed in 1965 by computer science pioneer Edsger Dijkstra.
    https://en.wikipedia.org/wiki/Sleeping_barber_problem
+
+
+Links:
+https://hackernoon.com/go-and-protocol-buffers-quick-tutorial
