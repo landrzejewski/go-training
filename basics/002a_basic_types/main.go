@@ -81,7 +81,7 @@ func integerTypes() {
 
 	// Decimal, binary, octal (0o755 or legacy 0755), hex, with optional _ separators.
 	decimal, binary, octal, hexa := 1_000_000, 0b1010, 0o755, 0xFF
-	fmt.Printf("1_000_000=%d 0b1010=%d 0o755=%d 0xFF=%d\n", decimal, binary, octal, hexa)
+	fmt.Printf("1_000_000=%d 0b1010=%d 0o755=%d 0xF_F=%d\n", decimal, binary, octal, hexa)
 
 	// Overflow wraps silently - defined two's-complement behaviour, not UB as in C and no
 	// panic as in Rust debug builds.

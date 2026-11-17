@@ -9,13 +9,49 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"structs"
 	"unsafe"
 )
 
+type currency int
+
+const (
+	pln currency = iota
+	usd
+	eur
+)
+
+type money struct {
+	value    int
+	currency currency
+}
+
+func (m *money) add(otherMoney *money) error {
+	if m.currency != otherMoney.currency {
+		return errors.New("Invalid currency")
+	}
+	m.value += otherMoney.value
+	return nil
+}
+
+func (m *money) subtract(otherMoney *money) error {
+	if m.currency != otherMoney.currency {
+		return errors.New("Invalid currency")
+	}
+	m.value -= otherMoney.value
+	return nil
+}
+
+func newMoney() *money {
+	return &money{0, pln}
+}
+
 func main() {
+	m1 := newMoney()
+
 	pointers()        // & and *, nil, no arithmetic, addressability, new vs &T{}
 	valueSemantics()  // what a copy actually copies; the append discontinuity
 	pointerOrValue()  // choosing a parameter type

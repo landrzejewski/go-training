@@ -37,7 +37,7 @@ func constants() {
 	// math.Pi is untyped, so it fits both float widths without a cast.
 	var pi32 float32 = math.Pi
 	var pi64 float64 = math.Pi
-	fmt.Printf("math.Pi as float32=%.7f as float64=%.15f\n", pi32, pi64)
+	fmt.Printf("math.Pi as float32=%.7f as float64=%.15f %v \n", pi32, pi64, math.Pi)
 
 	// With no context (:=, an any parameter) an untyped constant takes its DEFAULT type:
 	// int, rune, float64, complex128, string or bool.
