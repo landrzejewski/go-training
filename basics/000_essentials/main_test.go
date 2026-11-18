@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -166,4 +167,44 @@ func BenchmarkReverse(b *testing.B) {
 func ExampleReverse() {
 	fmt.Println(Reverse("Gopher"))
 	// Output: rehpoG
+}
+
+// TestSelectSections checks how the command-line arguments choose the sections to run.
+func TestSelectSections(t *testing.T) {
+	ids := func(ss []section) string {
+		out := make([]string, len(ss))
+		for i, s := range ss {
+			out[i] = s.id
+		}
+		return strings.Join(out, " ")
+	}
+	tests := []struct {
+		args    []string
+		want    string
+		wantErr bool
+	}{
+		{nil, ids(sections), false},                            // no arguments: everything
+		{[]string{"list"}, "", false},                          // nil: print the table instead
+		{[]string{"8"}, "008", false},                          // leading zeros are optional
+		{[]string{"2"}, "002a 002b", false},                    // a prefix selects every lettered section
+		{[]string{"18c", "001"}, "018c 001", false},            // in the order given
+		{[]string{"18"}, "018", false},                         // an exact number: that section only
+		{[]string{"18*", "018c"}, "018 018b 018c 018d", false}, // * selects the prefix; each runs once
+		{[]string{"99"}, "", true},
+		{[]string{"8", "nope"}, "", true},
+	}
+	for _, tt := range tests {
+		got, err := selectSections(tt.args)
+		if (err != nil) != tt.wantErr || ids(got) != tt.want {
+			t.Errorf("selectSections(%q) = %q, %v; want %q (error: %t)", tt.args, ids(got), err, tt.want, tt.wantErr)
+		}
+	}
+
+	seen := map[string]bool{}
+	for _, s := range sections {
+		if seen[s.id] || s.run == nil {
+			t.Errorf("section %q is listed twice or has no function", s.id)
+		}
+		seen[s.id] = true
+	}
 }

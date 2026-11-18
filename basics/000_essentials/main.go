@@ -1,17 +1,28 @@
-// Command 000_essentials is the gentle on-ramp to modules 001-014 of the Go course.
+// Command 000_essentials is the gentle on-ramp to the Go course: modules 001-014 (the language)
+// and 018-020 (building, securing and storing a service), plus Gin as the popular alternative
+// to net/http routing.
 //
-// The full modules are thorough: every corner case, every trap, every Go version. This file is
-// the opposite - one short section per module with only what you need on day one. Read a
+// The full modules are thorough: every corner case, every trap, every Go version. This program
+// is the opposite - one short section per module with only what you need on day one. Read a
 // section, run the program, compare with the output, and when a topic clicks open the full
 // module named in the "More:" line at the end of the section. Interfaces (008) and generics
 // (010) get a little more room, because almost everything after them builds on those two ideas.
 //
-// main() is the table of contents. In package main nothing is imported by other packages, so the
-// upper/lower case of names does not matter here; this file still uses Upper names for the main
-// types and functions, the way a library would.
+// This file holds modules 001-014. Modules 018-020 have one file per section, s018_http.go to
+// s020_gorm.go, and services.go is their map. The sections table below is the table of
+// contents for all of them, and the command-line arguments choose which sections run. In
+// package main nothing is imported by other packages, so the upper/lower case of names does
+// not matter here; the files still use Upper names for the main types and functions, the way
+// a library would.
 //
-//	go run ./basics/000_essentials
+// Sections 019 and 020 need PostgreSQL (docker-compose.yml in the repository root). Without it
+// they print a note and run only the parts that need no database.
+//
+//	go run ./basics/000_essentials             # every section
+//	go run ./basics/000_essentials list        # the table of contents
+//	go run ./basics/000_essentials 008 18c     # only these sections
 //	go test -v ./basics/000_essentials
+//	docker-compose up -d                       # PostgreSQL for 019 and 020
 package main
 
 import (
@@ -38,22 +49,117 @@ import (
 	"unicode/utf8"
 )
 
+// section is one entry of the table of contents: the module number, what it covers, and the
+// function that runs it.
+type section struct {
+	id    string
+	topic string
+	run   func()
+}
+
+// sections is the table of contents, in teaching order. Run every section, or only some:
+//
+//	go run ./basics/000_essentials              # everything
+//	go run ./basics/000_essentials list         # this table
+//	go run ./basics/000_essentials 8            # only 008 (leading zeros are optional)
+//	go run ./basics/000_essentials 018c 11      # these two, in this order
+//	go run ./basics/000_essentials 18           # only 018
+//	go run ./basics/000_essentials '18*'        # 018, 018b, 018c and 018d
+//	go run ./basics/000_essentials 2            # 002a and 002b: there is no plain 002
+var sections = []section{
+	{"001", "variables, zero values, scope, constants, iota", basics},
+	{"002a", "numbers, strings, bytes and runes, conversions", basicTypes},
+	{"002b", "arrays, slices, maps, structs", compositeTypes},
+	{"003", "arithmetic, comparison, logic, assignment", operators},
+	{"004", "if, switch, for, range, defer", controlFlow},
+	{"005", "multiple results, variadics, closures, panic", functions},
+	{"006", "& and *, pass by value vs by pointer", pointers},
+	{"007", "methods, receivers, constructors, embedding", structsAndMethods},
+	{"008", "implicit interfaces, values and aliasing, embedding and shadowing", interfaces},
+	{"009", "errors as values, wrapping, Is/As, which kind to use, pitfalls", errorHandling},
+	{"010", "type parameters, constraints, generic types", generics},
+	{"011", "goroutines, channels, select, mutex/atomic, context, errors", concurrency},
+	{"012", "range over func, Seq2, lazy adapters, slices, maps, cmp", iteratorsAndCollections},
+	{"013", "fmt, strings, time, json, files, slog", stdlib},
+	{"014", "go test - the tests are in main_test.go", testingIntro},
+
+	// one file per section: s018_http.go ... s020_gorm.go (the map is services.go)
+	{"018", "net/http: Handler, ServeMux routing, JSON, middleware, http.Server, shutdown", httpServices},
+	{"018b", "Gin: routes, params, binding and validation, groups, middleware", ginBasics},
+	{"018c", "security: headers, bcrypt, JWT, 401/403, cookies, CSRF, CORS, rate limits, TLS", httpSecurity},
+	{"018d", "Gin security: trusted proxies, auth groups, body limits, BasicAuth, cookies, XSS", ginSecurity},
+	{"019", "database/sql: the pool, queries, placeholders, NULL, transactions, repository", databaseSQL},
+	{"020", "GORM: models and tags, AutoMigrate, CRUD traps, Preload vs N+1, Transaction", gormBasics},
+}
+
 func main() {
-	basics()                  // 001  variables, zero values, scope, constants, iota
-	basicTypes()              // 002a numbers, strings, bytes and runes, conversions
-	compositeTypes()          // 002b arrays, slices, maps, structs
-	operators()               // 003  arithmetic, comparison, logic, assignment
-	controlFlow()             // 004  if, switch, for, range, defer
-	functions()               // 005  multiple results, variadics, closures, panic
-	pointers()                // 006  & and *, pass by value vs by pointer
-	structsAndMethods()       // 007  methods, receivers, constructors, embedding
-	interfaces()              // 008  implicit interfaces, values and aliasing, embedding and shadowing
-	errorHandling()           // 009  errors as values, wrapping, Is/As, which kind to use, pitfalls
-	generics()                // 010  type parameters, constraints, generic types
-	concurrency()             // 011  goroutines, channels, select, mutex/atomic, context, errors
-	iteratorsAndCollections() // 012  range over func, Seq2, lazy adapters, slices, maps, cmp
-	stdlib()                  // 013  fmt, strings, time, json, files, slog
-	testingIntro()            // 014  go test - the tests are in main_test.go
+	selected, err := selectSections(os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		printSections(os.Stderr)
+		os.Exit(2)
+	}
+	if selected == nil { // "list"
+		printSections(os.Stdout)
+		return
+	}
+	for _, s := range selected {
+		s.run()
+	}
+}
+
+// selectSections turns the command-line arguments into the sections to run: every section for
+// no arguments, and nil for "list". Otherwise each argument names the section with exactly
+// that number ("018"), or - with a trailing * ("018*"), or when no number matches exactly
+// ("002") - every section whose number starts with it. Leading zeros may be left out ("8" is
+// "008"), and a section named twice runs once.
+func selectSections(args []string) ([]section, error) {
+	if len(args) == 0 {
+		return sections, nil
+	}
+	if len(args) == 1 && slices.Contains([]string{"list", "help", "-h", "--help"}, args[0]) {
+		return nil, nil
+	}
+	var selected []section
+	seen := map[string]bool{}
+	for _, arg := range args {
+		name, wildcard := strings.CutSuffix(strings.ToLower(arg), "*")
+		name = padSectionNumber(name)
+		exact := !wildcard && slices.ContainsFunc(sections, func(s section) bool { return s.id == name })
+		found := false
+		for _, s := range sections {
+			if s.id == name || (!exact && strings.HasPrefix(s.id, name)) {
+				found = true
+				if !seen[s.id] {
+					seen[s.id] = true
+					selected = append(selected, s)
+				}
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("no section %q", arg)
+		}
+	}
+	return selected, nil
+}
+
+// padSectionNumber pads the number at the start of arg to three digits: "8" -> "008",
+// "18c" -> "018c". Anything else is returned unchanged.
+func padSectionNumber(arg string) string {
+	digits := len(arg) - len(strings.TrimLeft(arg, "0123456789"))
+	if digits == 0 || digits >= 3 {
+		return arg
+	}
+	return strings.Repeat("0", 3-digits) + arg
+}
+
+// printSections prints the table of contents and how to use it.
+func printSections(w io.Writer) {
+	fmt.Fprintln(w, "usage: go run ./basics/000_essentials [list | SECTION...]")
+	fmt.Fprintln(w, "  no SECTION runs every section; 18 runs 018; '18*' runs 018, 018b, 018c and 018d")
+	for _, s := range sections {
+		fmt.Fprintf(w, "  %-5s %s\n", s.id, s.topic)
+	}
 }
 
 // ============================================================================================

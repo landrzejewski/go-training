@@ -1,6 +1,6 @@
 # Basic exercises
 
-Three exercises for each section of [`main.go`](main.go) (the essentials of modules 001–014), 45 in total.
+Three exercises for each section of [`main.go`](main.go) and of the files that [`services.go`](services.go) lists (the essentials of modules 001–014 and 018–020, plus Gin and HTTP security), 63 in total.
 After them come [five larger projects](#projects) that use everything at once.
 Within a section the exercises get a little harder: the first practises one idea, and the third combines several.
 They use only what the section and the ones before it have shown. When an exercise needs something new, the *Hint* names it.
@@ -9,7 +9,8 @@ Reference solutions are in the [`solutions`](solutions) package. Each section ha
 
 ## How to work
 
-1. Read the section in `main.go` and run it: `go run ./basics/000_essentials`.
+1. Read the section in `main.go` (001–014) or in its own file, `s018_http.go` to `s020_gorm.go` (018–020), and run it.
+   `go run ./basics/000_essentials 8` runs only section 008, `go run ./basics/000_essentials 18c` only 018c, and `go run ./basics/000_essentials '18*'` runs 018, 018b, 018c and 018d. `list` shows every section, and without an argument everything runs.
 2. Create your own package, for example `basics/000_essentials/mywork/`, with `package mywork` at the top of each file.
    Write the functions and types **with exactly the signatures given below**.
 3. To check your work, copy the matching test file (e.g. `solutions/ex08_interfaces_test.go`) into your folder.
@@ -21,7 +22,11 @@ Reference solutions are in the [`solutions`](solutions) package. Each section ha
 
    Each `Example` function compares what it prints with its `// Output:` comment.
    A few tests use code from an earlier exercise (11.3 and 12.3 use `WordCount` from 2b.2, for example), so solve the exercises in order.
+   Some test files also share helpers: the 18b, 18c and 18d tests use `call` from `ex18_http_test.go`, and the 20 tests use `testDSN` and `testProductStoreContract` from `ex19_database_sql_test.go`. Copy those files too.
 4. Only then compare your code with the solution, and run all the solutions with `go test ./basics/000_essentials/solutions`.
+
+The tests for 19.2, 19.3, 20.2 and 20.3 need PostgreSQL. Start it from the repository root with `docker-compose up -d`. Without it those tests are skipped, not failed (`go test -v` shows `SKIP`).
+The `DSN` environment variable points the tests at another database.
 
 Some exercises have more than one good solution. If your tests pass and the code is easy to read, the solution is fine.
 
@@ -42,6 +47,12 @@ Some exercises have more than one good solution. If your tests pass and the code
 | [012](#012---iterators-and-collections) | iterators and collections | [`ex12_iterators_and_collections.go`](solutions/ex12_iterators_and_collections.go) |
 | [013](#013---standard-library-essentials) | standard library | [`ex13_stdlib.go`](solutions/ex13_stdlib.go) |
 | [014](#014---testing) | testing | [`ex14_testing_test.go`](solutions/ex14_testing_test.go) |
+| [018](#018---http-services) | HTTP services with net/http | [`ex18_http.go`](solutions/ex18_http.go) |
+| [018b](#018b---gin) | Gin | [`ex18b_gin.go`](solutions/ex18b_gin.go) |
+| [018c](#018c---http-security) | HTTP security: headers, passwords, JWT | [`ex18c_security.go`](solutions/ex18c_security.go) |
+| [018d](#018d---gin-security) | Gin security: proxies, rate limits, a secure API | [`ex18d_gin_security.go`](solutions/ex18d_gin_security.go) |
+| [019](#019---sql-databases-and-repositories) | database/sql, repositories | [`ex19_database_sql.go`](solutions/ex19_database_sql.go) |
+| [020](#020---gorm) | GORM | [`ex20_gorm.go`](solutions/ex20_gorm.go) |
 | [Projects](#projects) | 1 library · 2 cache · 3 log analyser · 4 search engine · 5 health monitor | [`library`](solutions/library) · [`cache`](solutions/cache) · [`logstats`](solutions/logstats) · [`search`](solutions/search) · [`monitor`](solutions/monitor) |
 
 ---
@@ -954,6 +965,505 @@ func JoinBuilder(parts []string, sep string) string // strings.Builder
 2. Write `BenchmarkJoinPlus` and `BenchmarkJoinBuilder`, each joining 1000 words, using `for b.Loop() { ... }`.
 3. Write `ExampleJoinBuilder` with an `// Output:` comment.
 4. Run `go test -run '^$' -bench Join -benchmem` and compare `ns/op`, `B/op` and `allocs/op`. Can you explain the difference?
+
+---
+
+## 018 - HTTP services
+
+Section: `httpServices()` in [`s018_http.go`](s018_http.go) · Full module: [018](../018_http_services)
+
+Test your handlers with `httptest`, as `services_test.go` does: no server and no network are needed.
+The test file prints every response as `status body`.
+
+### 18.1 Greetings over HTTP
+
+```go
+func NewGreetMux() *http.ServeMux
+```
+
+Serve `GET /hello/{name}` with the JSON `{"greeting": "..."}`. The optional query parameter `lang` picks the language: `pl` gives `cześć, Ann`, `de` gives `hallo, Ann`, and anything else gives `hello, Ann`.
+Set the `Content-Type` header to `application/json`.
+
+```
+GET  /hello/Ann          -> 200 {"greeting":"hello, Ann"}
+GET  /hello/Ann?lang=pl  -> 200 {"greeting":"cześć, Ann"}
+POST /hello/Ann          -> 405 Method Not Allowed
+GET  /hello/             -> 404 404 page not found
+```
+
+*Hint:* a pattern such as `"GET /hello/{name}"`, `r.PathValue`, `r.URL.Query().Get`. Write a small `writeJSON(w, status, v)` helper. Set the header first, then call `WriteHeader`, then encode the body with `json.NewEncoder(w)`.
+You do not write the 405 yourself: ServeMux sends it.
+
+### 18.2 A todo API
+
+```go
+type Todo struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+	Done  bool   `json:"done"`
+}
+
+var ErrTodoNotFound = errors.New("todo not found")
+
+type TodoStore struct{ /* your fields */ }
+
+func NewTodoStore() *TodoStore
+func (s *TodoStore) Add(title string) Todo        // IDs start at 1
+func (s *TodoStore) Get(id int) (Todo, error)     // ErrTodoNotFound
+func (s *TodoStore) All() []Todo                  // sorted by ID; empty, not nil
+
+func NewTodoMux(store *TodoStore) *http.ServeMux
+```
+
+The store must be safe for concurrent use, because every request runs in its own goroutine. The API:
+
+| Request | Answer |
+|---|---|
+| `GET /todos` | 200 and the list |
+| `POST /todos` with `{"title":"..."}` | 201 and the new todo. The title is trimmed. An empty title gives 400 `{"error":"title is required"}`, broken JSON gives 400 `{"error":"invalid JSON"}`, and a body over 1 KB gives 413 `{"error":"body too large"}`. |
+| `GET /todos/{id}` | 200 and the todo. An id that is not a number gives 400 `{"error":"invalid id"}`, and an unknown id gives 404 `{"error":"todo not found"}`. |
+
+```
+POST /todos {"title":"  buy milk "}  -> 201 {"id":1,"title":"buy milk","done":false}
+GET  /todos/7                        -> 404 {"error":"todo not found"}
+```
+
+*Hint:* `http.MaxBytesReader` before decoding. `errors.AsType[*http.MaxBytesError](err)` tells "too large" apart from "broken". Use `strconv.Atoi` for the id and `sync.Mutex` in the store.
+
+### 18.3 Middleware
+
+```go
+type Middleware func(http.Handler) http.Handler
+
+func Chain(h http.Handler, mws ...Middleware) http.Handler // the FIRST one listed is the outermost
+func RequireAPIKey(key string) Middleware                  // 401 {"error":"unauthorized"} unless X-API-Key == key
+func LogRequests(out io.Writer) Middleware                 // one line per request: "GET /todos 200"
+```
+
+Combine them with the API from 18.2. Because `LogRequests` is listed first, it also logs the requests that `RequireAPIKey` rejects:
+
+```
+h := Chain(NewTodoMux(store), LogRequests(os.Stdout), RequireAPIKey("secret"))
+
+GET /todos without a key      -> prints "GET /todos 401", answers 401 {"error":"unauthorized"}
+GET /todos, X-API-Key: secret -> prints "GET /todos 200", answers 200 [...]
+```
+
+*Hint:* `ResponseWriter` cannot tell you the status that was written. Make a struct that **embeds** `http.ResponseWriter`, so it is one, and overrides only `WriteHeader(code int)`, which records the code. If a handler never calls `WriteHeader`, the status is 200.
+
+---
+
+## 018b - Gin
+
+Section: `ginBasics()` in [`s018b_gin.go`](s018b_gin.go) · Example: [`examples/rest.go`](../../examples/rest.go)
+
+Create routers with `gin.New()`. The test file calls `gin.SetMode(gin.TestMode)`, so Gin does not print its route list.
+A `*gin.Engine` is an `http.Handler`, so the tests use `call` from `ex18_http_test.go`, exactly as for net/http.
+
+### 18b.1 Greetings with Gin
+
+```go
+func NewGreetRouter() *gin.Engine
+```
+
+The same API as 18.1, written with Gin. Compare the two solutions side by side.
+
+```
+GET  /hello/Ann?lang=pl  -> 200 {"greeting":"cześć, Ann"}
+POST /hello/Ann          -> 405 405 method not allowed
+```
+
+*Hint:* `r.GET("/hello/:name", ...)`, `c.Param`, `c.Query`, `c.JSON(status, gin.H{...})`. Gin answers a wrong method with **404** unless you set `r.HandleMethodNotAllowed = true`.
+
+### 18b.2 Binding and validation
+
+```go
+type SignupRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+	Age      int    `json:"age" binding:"gte=18"`
+}
+
+func NewSignupRouter() *gin.Engine
+```
+
+`POST /signup`:
+- For a valid body, answer 201 `{"email": "..."}`. Never send the password back.
+- When validation fails, answer 400 `{"invalid": [...]}` with the lower-case names of the failing fields, sorted.
+- For broken JSON, answer 400 `{"error":"invalid JSON"}`.
+
+```
+{"email":"ann@example.com","password":"long enough","age":30} -> 201 {"email":"ann@example.com"}
+{"email":"not-an-email","password":"long enough"}             -> 400 {"invalid":["age","email"]}
+{}                                                            -> 400 {"invalid":["age","email","password"]}
+{"email":                                                     -> 400 {"error":"invalid JSON"}
+```
+
+Why is `Age` checked with `gte=18` and not `required`? Try `binding:"required"` on an `int` field and send `0`.
+
+*Hint:* `c.ShouldBindJSON(&req)`, not `c.BindJSON`, which writes its own 400. The validation errors are a `validator.ValidationErrors` (import `github.com/go-playground/validator/v10`): `errors.AsType[validator.ValidationErrors](err)`, then `fe.Field()` for each one.
+
+### 18b.3 Groups and middleware
+
+```go
+func RequireAPIKeyGin(key string) gin.HandlerFunc
+func NewTodoRouter(store *TodoStore, apiKey string) *gin.Engine
+```
+
+Use the `TodoStore` from 18.2.
+
+| Request | Access | Answer |
+|---|---|---|
+| `GET /api/todos` | public | 200 and the list |
+| `GET /api/todos/:id` | public | 200, 400 `{"error":"invalid id"}`, 404 `{"error":"todo not found"}` |
+| `POST /api/admin/todos` with `{"title":"..."}` | needs `X-API-Key` | 201 and the new todo, 400 `{"error":"title is required"}`, 401 `{"error":"unauthorized"}` without the key |
+
+Put the middleware on the **group** `/api/admin`, not on each route.
+
+*Hint:* `r.Group("/api")`, `api.Group("/admin", RequireAPIKeyGin(apiKey))`, `c.AbortWithStatusJSON` and `c.Next()`. A `binding:"required"` tag on the title field replaces the empty check.
+
+---
+
+## 018c - HTTP security
+
+Section: `httpSecurity()` in [`s018c_security.go`](s018c_security.go)
+
+The tests use `call` and `record` from `ex18_http_test.go`. They hash with `bcrypt.MinCost` to stay fast; production code uses `bcrypt.DefaultCost` or more.
+New packages: `golang.org/x/crypto/bcrypt` and `github.com/golang-jwt/jwt/v5`. Both are already in the repository's `go.mod`.
+
+### 18c.1 Security headers
+
+```go
+func SecureHeaders(next http.Handler) http.Handler
+```
+
+Set these headers on **every** response of `next`:
+
+| Header | Value |
+|---|---|
+| `X-Content-Type-Options` | `nosniff` |
+| `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
+| `Referrer-Policy` | `no-referrer` |
+| `Cache-Control` | `no-store` |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains`, **only** when the request came over HTTPS |
+
+```
+GET http://example.com/   -> the first four headers, no Strict-Transport-Security
+GET https://example.com/  -> all five
+```
+
+*Hint:* set the headers **before** calling `next.ServeHTTP`: once the handler has written the status, it is too late.
+A request that came over HTTPS has `r.TLS != nil`. In a test, `httptest.NewRequest("GET", "https://example.com/", nil)` sets `r.TLS` for you.
+
+### 18c.2 A password store
+
+```go
+var (
+	ErrUserExists         = errors.New("user already exists")
+	ErrWeakPassword       = errors.New("password too weak")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+)
+
+type PasswordStore struct{ /* your fields */ }
+
+func NewPasswordStore(cost int) *PasswordStore                    // the bcrypt cost
+func (s *PasswordStore) Register(user, password, role string) error
+func (s *PasswordStore) Check(user, password string) (role string, err error)
+func (s *PasswordStore) Hash(user string) ([]byte, bool)           // the stored hash
+func (s *PasswordStore) Count() int
+```
+
+- Store only the bcrypt **hash**, never the password.
+- A password shorter than 8 characters gives an error that wraps `ErrWeakPassword`. One longer than 72 bytes wraps `bcrypt.ErrPasswordTooLong`, because bcrypt reads only 72 bytes. A used name wraps `ErrUserExists`.
+- `Check` returns the **same** `ErrInvalidCredentials` for an unknown user and for a wrong password, so an attacker cannot find out which users exist.
+- The store is safe for concurrent use.
+
+```
+Register("ann", "correct horse", "admin") -> <nil>
+Register("bob", "short", "user")          -> register bob: password too weak: at least 8 characters
+Check("ann", "correct horse")             -> admin <nil>
+Check("ann", "wrong horse")               -> invalid credentials
+Check("eve", "correct horse")             -> invalid credentials
+```
+
+*Hint:* `bcrypt.GenerateFromPassword([]byte(password), cost)` and `bcrypt.CompareHashAndPassword(hash, []byte(password))`. Hashing is slow on purpose, so do it **outside** the mutex.
+For an unknown user, compare against a dummy hash anyway. Otherwise the fast answer tells the attacker that the user does not exist.
+
+### 18c.3 JWTs and a role middleware
+
+```go
+const TokenIssuer = "go-training"
+
+type Claims struct {
+	Role string `json:"role"`
+	jwt.RegisteredClaims
+}
+
+func IssueToken(secret []byte, subject, role string, ttl time.Duration, now time.Time) (string, error)
+func ParseToken(secret []byte, token string, now time.Time) (*Claims, error)
+
+func RequireRole(secret []byte, role string) Middleware // Middleware from 18.3
+func ClaimsFrom(ctx context.Context) (*Claims, bool)
+```
+
+- `IssueToken` signs with HS256 and sets `sub`, `iss` (`TokenIssuer`), `iat` and `exp` (`now + ttl`).
+- `ParseToken` checks the token as of `now`. It accepts **only** HS256, whatever the token's own header says, and it requires the issuer and an expiry.
+- `RequireRole` reads `Authorization: Bearer <token>`:
+  - no token or an invalid one gives 401 `{"error":"unauthorized"}` with a `WWW-Authenticate` header;
+  - a valid token with another role gives 403 `{"error":"forbidden"}`;
+  - otherwise the claims go into the request's context for `ClaimsFrom`.
+
+  An empty `role` accepts any valid token.
+
+```
+ParseToken(secret, token, now+30m)            -> ann admin go-training <nil>
+ParseToken(secret, token, now+2h)             -> errors.Is(err, jwt.ErrTokenExpired)
+the payload edited from "admin" to "root"     -> errors.Is(err, jwt.ErrTokenSignatureInvalid)
+a token with "alg":"none"                     -> an error
+
+GET /admin without a token -> 401   with Bob's "user" token -> 403   with Ann's "admin" token -> 200
+```
+
+*Hint:* `jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secret)`. Parse with `jwt.ParseWithClaims(token, &claims, keyFunc, options...)` and these options: `jwt.WithValidMethods([]string{"HS256"})`, `jwt.WithIssuer`, `jwt.WithExpirationRequired()` and `jwt.WithTimeFunc`.
+Decode the middle part with `base64.RawURLEncoding` and you can read every claim. A JWT is signed, **not** encrypted.
+Put the claims in the context under an unexported key type: `type claimsKey struct{}`.
+
+---
+
+## 018d - Gin security
+
+Section: `ginSecurity()` in [`s018d_gin_security.go`](s018d_gin_security.go)
+
+The tests use `call` and `recordBody` from `ex18_http_test.go`. 18d.3 builds on 18c.2 and 18c.3, so copy those files too.
+The rate limiter comes from `golang.org/x/time/rate`, which is already in the repository's `go.mod`.
+
+### 18d.1 Trusted proxies
+
+```go
+func NewIPEcho(trusted []string) (*gin.Engine, error)
+```
+
+Serve `GET /ip` with `{"ip": c.ClientIP()}`. Only the proxies in `trusted` (IP addresses or CIDR ranges) may name the client in `X-Forwarded-For`; with `nil`, no proxy is trusted.
+Return an error that starts with `trusted proxies:` for an invalid entry.
+
+```
+NewIPEcho(nil), from 203.0.113.7 with X-Forwarded-For: 1.2.3.4             -> {"ip":"203.0.113.7"}
+NewIPEcho({"10.0.0.0/8"}), from 10.0.0.5 with X-Forwarded-For: 1.2.3.4     -> {"ip":"1.2.3.4"}
+NewIPEcho({"10.0.0.0/8"}), from 203.0.113.7 with X-Forwarded-For: 1.2.3.4  -> {"ip":"203.0.113.7"}
+NewIPEcho({"not-an-ip"})                                                   -> trusted proxies: invalid IP address: not-an-ip
+```
+
+Then remove the call to `SetTrustedProxies` and run the first case again. What does Gin trust **by default**?
+
+*Hint:* `r.SetTrustedProxies(trusted)`. In a test, set `req.RemoteAddr = "203.0.113.7:4000"` to choose the TCP peer.
+
+### 18d.2 Rate limiting per client
+
+```go
+func RateLimit(limit rate.Limit, burst int) gin.HandlerFunc
+```
+
+Give every client, identified by `c.ClientIP()`, its own token bucket: `burst` requests at once, refilled at `limit` requests per second.
+Over the limit, answer 429 `{"error":"too many requests"}` with a `Retry-After` header: the seconds until the next request is allowed, rounded up (`60` for `rate.Every(time.Minute)`).
+
+```
+SetTrustedProxies(nil) + RateLimit(rate.Every(time.Minute), 2), one client, a different X-Forwarded-For each time
+  -> 200, 200, 429 (Retry-After: 60); another client -> 200
+Gin's default (no SetTrustedProxies), the same three requests
+  -> 200, 200, 200: every fake address got a fresh bucket
+```
+
+*Hint:* `rate.NewLimiter(limit, burst)` and `l.Allow()`. Keep the limiters in a `map[string]*rate.Limiter` behind a `sync.Mutex`, created once in `RateLimit`, not on every request.
+`c.AbortWithStatusJSON` stops the chain. The second case is why 18d.1 matters.
+
+### 18d.3 A secure Gin API
+
+```go
+func NewSecureRouter(store *PasswordStore, secret []byte) *gin.Engine
+```
+
+Combine 18c.2 and 18c.3 in Gin:
+
+| Request | Access | Answer |
+|---|---|---|
+| `POST /login` with `{"user":"...","password":"..."}` | public | 200 `{"token":"..."}` (valid for 15 minutes); 400 `{"error":"user and password are required"}`; 401 `{"error":"invalid credentials"}`; 413 `{"error":"body too large"}` over 1 KB |
+| `GET /api/me` | any valid token | 200 `{"role":"...","user":"..."}`, otherwise 401 `{"error":"unauthorized"}` |
+| `GET /api/admin/stats` | the role `admin` | 200 `{"users": N}`, otherwise 403 `{"error":"forbidden"}` |
+
+Trust no proxy, and put the token check on the **group** `/api` and the role check on the group `/api/admin`.
+
+*Hint:* Gin has no body limit of its own. A middleware that sets `c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<10)` provides one, and `errors.AsType[*http.MaxBytesError](err)` recognises it after `ShouldBindJSON`.
+Store the claims with `c.Set("claims", claims)` and read them with `c.MustGet("claims").(*Claims)`.
+
+---
+
+## 019 - SQL databases and repositories
+
+Section: `databaseSQL()` in [`s019_database_sql.go`](s019_database_sql.go) · Full module: [019](../019_database_sql_and_repository)
+
+19.1 needs no database. The tests for 19.2 and 19.3 need PostgreSQL (`docker-compose up -d`) and create their own tables. Without PostgreSQL they are skipped.
+
+### 19.1 A product store behind an interface
+
+```go
+type Product struct {
+	ID    int64
+	Name  string
+	Price int64 // in cents
+}
+
+var (
+	ErrProductNotFound = errors.New("product not found")
+	ErrProductExists   = errors.New("product already exists")
+)
+
+type ProductStore interface {
+	Add(ctx context.Context, p Product) (Product, error)            // returns p with its new ID
+	ByID(ctx context.Context, id int64) (Product, error)
+	Cheaper(ctx context.Context, maxPrice int64) ([]Product, error) // Price <= maxPrice, cheapest first, then by ID
+}
+
+type MemoryProductStore struct{ /* your fields */ }
+
+func NewMemoryProductStore() *MemoryProductStore
+```
+
+`MemoryProductStore` keeps the products in a map and is safe for concurrent use. A name that is already used gives an error that wraps `ErrProductExists`, and a missing id gives one that wraps `ErrProductNotFound`. Add context to both:
+
+```
+Add {Name: "pen"} again  -> add "pen": product already exists
+ByID(99)                 -> product 99: product not found
+Cheaper(800)             -> [{2 pen 250} {3 mug 800}]
+```
+
+*Hint:* `fmt.Errorf("add %q: %w", ...)`. Sort with `slices.SortFunc` and `cmp.Or(cmp.Compare(a.Price, b.Price), cmp.Compare(a.ID, b.ID))`. Add the line `var _ ProductStore = (*MemoryProductStore)(nil)` and the compiler checks that the type satisfies the interface.
+
+### 19.2 The same store on database/sql
+
+```go
+type SQLProductStore struct{ /* a *sql.DB */ }
+
+func NewSQLProductStore(db *sql.DB) *SQLProductStore // satisfies ProductStore
+```
+
+The test creates this table:
+
+```sql
+create table ex19_products (
+	id    bigserial primary key,
+	name  text   not null unique,
+	price bigint not null
+)
+```
+
+The test file runs **the same contract** against the in-memory store and against yours, so both must return the same domain errors. No `*pq.Error` and no `sql.ErrNoRows` may leave the store.
+
+*Hint:* use only the `...Context` methods. PostgreSQL has no `LastInsertId`, so use `insert ... returning id` with `QueryRowContext(...).Scan(&p.ID)`.
+A missing row is `sql.ErrNoRows`, and a duplicate name is a `*pq.Error` with `Code == "23505"`: use `errors.AsType[*pq.Error](err)` and import `github.com/lib/pq`, which also registers the driver.
+For `Cheaper`, write `defer rows.Close()`, loop with `for rows.Next()`, and check `rows.Err()` at the end. Every value goes in as a placeholder (`$1`), never with `+` or `Sprintf`.
+
+### 19.3 A money transfer in a transaction
+
+```go
+var (
+	ErrAccountNotFound   = errors.New("account not found")
+	ErrInsufficientFunds = errors.New("insufficient funds")
+)
+
+func Transfer(ctx context.Context, db *sql.DB, from, to, amount int64) error
+```
+
+The table is `ex19_accounts (id bigint primary key, balance bigint not null)`. Move `amount` from one account to the other. Both updates are kept, or neither is:
+- an amount that is not positive is an error;
+- an unknown sender or receiver gives `ErrAccountNotFound`;
+- a balance that is too small gives `ErrInsufficientFunds`;
+- when the receiver does not exist, the money that already left the sender **must come back**. The test checks the balances after every step.
+
+*Hint:* `tx, err := db.BeginTx(ctx, nil)`, then `defer tx.Rollback()` right away, then `tx.Commit()` at the end. Inside the transaction use `tx`, never `db`.
+`select balance ... for update` locks the row, so two transfers cannot both spend the same money. An `UPDATE` that matched nothing has `RowsAffected() == 0`.
+
+---
+
+## 020 - GORM
+
+Section: `gormBasics()` in [`s020_gorm.go`](s020_gorm.go) · Full module: [020](../020_gorm)
+
+20.1 needs no database. The tests for 20.2 and 20.3 need PostgreSQL. They open GORM with `TranslateError: true` and use helpers from `ex19_database_sql_test.go`.
+
+### 20.1 A model and its tags
+
+```go
+type Article struct { /* your fields and tags */ }
+
+func DescribeModel(model any) (table string, columns, uniqueIndexes []string, err error)
+```
+
+Write the `Article` model so that GORM derives:
+- the table `articles`;
+- the columns `id title slug body published_at created_at updated_at`, in this order;
+- one unique index, on `slug`;
+- a primary key `id`, `title` and `slug` limited to 200 characters and `not null`, and a `published_at` that may be NULL (a draft);
+- a `WordCount int` field that is **not** stored.
+
+`DescribeModel` checks your model without any database:
+
+```
+DescribeModel(&Article{}) -> articles [id title slug body published_at created_at updated_at] [idx_articles_slug]
+```
+
+Then misspell `uniqueIndex` as `uniqeIndex` and run it again. GORM does not complain: the index just disappears.
+
+*Hint:* `schema.Parse(model, &sync.Map{}, schema.NamingStrategy{})` from `gorm.io/gorm/schema` returns a `*schema.Schema` with `Table`, `DBNames` and `ParseIndexes()`. A unique index has `Class == "UNIQUE"`. Use the tags `size:200;not null`, `uniqueIndex` and `-`, and a `*time.Time` for the date that may be NULL.
+
+### 20.2 The product store on GORM
+
+```go
+type GormProductStore struct{ /* a *gorm.DB */ }
+
+func NewGormProductStore(db *gorm.DB) *GormProductStore
+func (s *GormProductStore) Migrate(ctx context.Context) error // creates the table ex20_products
+```
+
+`GormProductStore` must satisfy `ProductStore` from 19.1 and pass the same contract test. Use a separate model type with gorm tags (for example `productRecord`, with `TableName() string { return "ex20_products" }`), so that `Product` stays free of GORM.
+
+*Hint:* `AutoMigrate`, `Create`, `First(&rec, id)` (an error for no row) rather than `Find` (no error for no rows), and `Where("price <= ?", max).Order("price, id").Find(&recs)`.
+With `TranslateError: true` a duplicate name is `gorm.ErrDuplicatedKey`, and a missing row is `gorm.ErrRecordNotFound`. Translate both into the domain errors. Always pass `WithContext(ctx)` and check `.Error`.
+
+### 20.3 Associations, a transaction and Preload
+
+```go
+type Author struct {
+	ID     int64
+	Name   string `gorm:"size:100;not null;uniqueIndex"`
+	Novels []Novel
+}
+
+type Novel struct {
+	ID       int64
+	AuthorID int64  `gorm:"not null;index"`
+	Title    string `gorm:"size:200;not null"`
+}
+
+// TableName: "ex20_authors" and "ex20_novels"
+
+var ErrEmptyTitle = errors.New("empty title")
+
+func CreateAuthorWithNovels(ctx context.Context, db *gorm.DB, name string, titles ...string) (Author, error)
+func AuthorsWithNovels(ctx context.Context, db *gorm.DB) ([]Author, error)
+```
+
+- `CreateAuthorWithNovels` inserts the author first and then each novel, all in **one transaction**. If any title is blank, it returns an error that wraps `ErrEmptyTitle`, and **nothing** is stored, not even the author.
+- `AuthorsWithNovels` returns every author sorted by name, each with their novels sorted by title. It must need exactly **2 queries** however many authors there are. The test counts them.
+
+```
+CreateAuthorWithNovels(ctx, db, "Herbert", "Dune", "Children of Dune")
+CreateAuthorWithNovels(ctx, db, "Le Guin", "The Dispossessed", " ")  -> error, Le Guin is not stored
+CreateAuthorWithNovels(ctx, db, "Asimov", "Foundation")
+AuthorsWithNovels(ctx, db) -> [Asimov:[Foundation] Herbert:[Children of Dune Dune]]
+```
+
+*Hint:* `db.Transaction(func(tx *gorm.DB) error { ... })` commits on `nil` and rolls back on an error. Inside it, use `tx`.
+For the loading, write `Preload("Novels", func(tx *gorm.DB) *gorm.DB { return tx.Order("title") })`. A loop that loads each author's novels separately would take 1+N queries.
 
 ---
 

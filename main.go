@@ -15,7 +15,9 @@
 // and flat-file database exercises.
 package main
 
-import "fmt"
+import (
+	"training.pl/go/examples/concurrency"
+)
 
 // modules lists the course directories under basics/, in teaching order.
 var modules = []struct{ dir, title string }{
@@ -45,28 +47,31 @@ var modules = []struct{ dir, title string }{
 }
 
 func main() {
-	fmt.Println("Go training - language modules")
-	fmt.Println()
-	fmt.Println("every module is its own program; run one with:")
-	fmt.Println("  go run ./basics/<dir>      e.g. go run ./basics/005_functions")
-	fmt.Println()
-	for _, m := range modules {
-		fmt.Printf("  %-50s %s\n", m.dir, m.title)
-	}
-	fmt.Println()
-	fmt.Println("other demos in this repo (see notes.md for the exercise statements):")
-	fmt.Println("  these are library packages - call them from a test or a scratch main,")
-	fmt.Println("  except the chat, which is two real commands:")
-	fmt.Println()
-	fmt.Println("    examples              Echo(), Cat(), Find(), Grep(), TicTacToe(), Reflect(),")
-	fmt.Println("                          MonetaryAmountDemo(), RestAPI() (needs docker-compose up)")
-	fmt.Println("    examples/concurrency  Barbers(), ChannelsDemo(), FindFiles(pattern, roots...),")
-	fmt.Println("                          ProducerConsumerClassic(), ProducerConsumerChannels(),")
-	fmt.Println("                          Barrier, Semaphore")
-	fmt.Println("    examples/common       Stack[T], Add[T Number], ToBytes/FromBytes (gob)")
-	fmt.Println("    examples/budget       New(path), ParseEntry(args), Load/Add/Print/Save")
-	fmt.Println("    examples/db           Open(path, gen), DatabaseTest(), DatabaseExercise() (HTTP on :8080)")
-	fmt.Println()
-	fmt.Println("    go run ./examples/chat/server    TCP chat server")
-	fmt.Println("    go run ./examples/chat/client    TCP chat client")
+	//fmt.Println("Go training - language modules")
+	//fmt.Println()
+	//fmt.Println("every module is its own program; run one with:")
+	//fmt.Println("  go run ./basics/<dir>      e.g. go run ./basics/005_functions")
+	//fmt.Println()
+	//for _, m := range modules {
+	//	fmt.Printf("  %-50s %s\n", m.dir, m.title)
+	//}
+	//fmt.Println()
+	//fmt.Println("other demos in this repo (see notes.md for the exercise statements):")
+	//fmt.Println("  these are library packages - call them from a test or a scratch main,")
+	//fmt.Println("  except the chat, which is two real commands:")
+	//fmt.Println()
+	//fmt.Println("    examples              Echo(), Cat(), Find(), Grep(), TicTacToe(), Reflect(),")
+	//fmt.Println("                          MonetaryAmountDemo(), RestAPI() (needs docker-compose up)")
+	//fmt.Println("    examples/concurrency  Barbers(), ChannelsDemo(), FindFiles(pattern, roots...),")
+	//fmt.Println("                          ProducerConsumerClassic(), ProducerConsumerChannels(),")
+	//fmt.Println("                          Barrier, Semaphore")
+	//fmt.Println("    examples/common       Stack[T], Add[T Number], ToBytes/FromBytes (gob)")
+	//fmt.Println("    examples/budget       New(path), ParseEntry(args), Load/Add/Print/Save")
+	//fmt.Println("    examples/db           Open(path, gen), DatabaseTest(), DatabaseExercise() (HTTP on :8080)")
+	//fmt.Println()
+	//fmt.Println("    go run ./examples/chat/server    TCP chat server")
+	//fmt.Println("    go run ./examples/chat/client    TCP chat client")
+
+	concurrency.Run()
+
 }
